@@ -1,38 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { db, circuit_detail } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
-import { CircuitLayout, DriverPhoto } from './Images';
+import { DriverPhoto } from './Images';
 
 function TabButton({ id, active, onClick, children }) {
   return (
     <button
+      type="button"
       onClick={() => onClick(id)}
-      style={{
-        padding: '8px 10px',
-        background: active ? 'rgba(220,38,38,.14)' : 'transparent',
-        border: `1px solid ${active ? 'rgba(220,38,38,.35)' : 'var(--line2)'}`,
-        borderRadius: 6,
-        color: active ? '#fff' : 'var(--sub)',
-        cursor: 'pointer',
-        fontFamily: 'var(--sans)',
-        fontWeight: 800,
-        fontSize: 11,
-        letterSpacing: '.04em',
-        textTransform: 'uppercase',
-        transition: 'all .12s',
-      }}
+      className={`detail-tv__tab ${active ? 'is-active' : ''}`}
     >
       {children}
     </button>
-  );
-}
-
-function StatCounter({ label, value }) {
-  return (
-    <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid var(--line)', borderRadius: 6, padding: '10px 10px', textAlign: 'center' }}>
-      <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--muted)', letterSpacing: '.09em', textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ marginTop: 6, fontFamily: 'var(--mono)', fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>{value ?? '—'}</div>
-    </div>
   );
 }
 
@@ -45,58 +24,44 @@ function formatLapTime(ms) {
 }
 
 function RaceHistoryRow({ race, winner }) {
+  const winnerName = winner?.drivers ? `${winner.drivers.first_name || ''} ${winner.drivers.last_name || ''}`.trim() : '';
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: '1fr auto',
-      gap: 12,
-      padding: 12,
-      border: '1px solid var(--line)',
-      borderRadius: 10,
-      background: 'rgba(255,255,255,.02)',
-      alignItems: 'center',
-    }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--muted)' }}>
-            {race.season_year} · R{race.round}
-          </span>
-          {race.sprint ? <span className="badge badge-yellow">Sprint</span> : null}
-        </div>
-        <div style={{ fontWeight: 700, fontSize: 13 }}>{race.name || 'Race'}</div>
-        <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--sub)' }}>
-          {race.date || '—'}
-        </div>
+    <div className="detail-tv__row circuit-tv__raceRow">
+      <div className="circuit-tv__raceKey">
+        <span className="detail-tv__monoRed">{race.season_year ?? '—'}</span>
+        <span className="detail-tv__monoSep">·</span>
+        <span>R{race.round ?? '—'}</span>
+        {race.sprint ? <span className="detail-tv__sprint">Sprint</span> : null}
       </div>
+
+      <div className="circuit-tv__raceMain">
+        <div className="circuit-tv__raceName" title={race.name || ''}>{race.name || 'Race'}</div>
+        <div className="circuit-tv__raceDate">{race.date || '—'}</div>
+      </div>
+
       {winner ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-          <div style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--mono)', textTransform: 'uppercase' }}>Winner</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <DriverPhoto src={winner.drivers?.image_url} name={`${winner.drivers?.first_name} ${winner.drivers?.last_name}`} size={22} />
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: 11, fontWeight: 600 }}>{winner.drivers?.first_name} {winner.drivers?.last_name}</span>
-              <span style={{ fontSize: 10, color: 'var(--sub)' }}>{winner.teams?.name || ''}</span>
+        <div className="circuit-tv__raceWinner">
+          <div className="detail-tv__kicker">WINNER</div>
+          <div className="circuit-tv__raceWinnerRow">
+            <DriverPhoto src={winner.drivers?.image_url} name={winnerName} size={28} rounded />
+            <div className="circuit-tv__raceWinnerText">
+              <div className="circuit-tv__raceWinnerName" title={winnerName}>{winnerName || '—'}</div>
+              <div className="circuit-tv__raceWinnerTeam" title={winner.teams?.name || ''}>{winner.teams?.name || ''}</div>
             </div>
           </div>
         </div>
-      ) : null}
+      ) : (
+        <div />
+      )}
     </div>
   );
 }
 
 function RecordCard({ title, records, renderItem }) {
   return (
-    <div style={{ border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden' }}>
-      <div style={{ padding: '10px 12px', background: 'rgba(255,255,255,.03)', borderBottom: '1px solid var(--line)', fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.08em' }}>
-        {title}
-      </div>
-      {records.length === 0 ? (
-        <div style={{ padding: 16, textAlign: 'center', color: 'var(--muted)', fontSize: 12 }}>No data available</div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {records.map(renderItem)}
-        </div>
-      )}
+    <div className="detail-tv__section">
+      <div className="detail-tv__sectionTitle">{title}</div>
+      {records.length === 0 ? <div className="info-msg">No data available</div> : <div className="detail-tv__rows">{records.map(renderItem)}</div>}
     </div>
   );
 }
@@ -104,19 +69,13 @@ function RecordCard({ title, records, renderItem }) {
 function DriverWinsRow({ record, index }) {
   const driver = record.drivers;
   const wins = record.count;
+  const name = driver ? `${driver.first_name || ''} ${driver.last_name || ''}`.trim() : '';
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: '28px 36px 1fr auto',
-      gap: 10,
-      padding: '8px 12px',
-      borderBottom: '1px solid var(--line)',
-      alignItems: 'center',
-    }}>
-      <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--muted)' }}>#{index + 1}</div>
-      <DriverPhoto src={driver?.image_url} name={`${driver?.first_name} ${driver?.last_name}`} size={32} />
-      <div style={{ fontSize: 12, fontWeight: 600 }}>{driver?.first_name} {driver?.last_name}</div>
-      <div style={{ fontFamily: 'var(--mono)', fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>{wins} W</div>
+    <div className="detail-tv__row detail-tv__recordRow">
+      <div className="detail-tv__monoMuted">#{index + 1}</div>
+      <DriverPhoto src={driver?.image_url} name={name} size={28} rounded />
+      <div className="detail-tv__rowTitle" title={name}>{name || '—'}</div>
+      <div className="detail-tv__rowRight">{wins} W</div>
     </div>
   );
 }
@@ -124,19 +83,13 @@ function DriverWinsRow({ record, index }) {
 function DriverAppearancesRow({ record, index }) {
   const driver = record.drivers;
   const appearances = record.count;
+  const name = driver ? `${driver.first_name || ''} ${driver.last_name || ''}`.trim() : '';
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: '28px 36px 1fr auto',
-      gap: 10,
-      padding: '8px 12px',
-      borderBottom: '1px solid var(--line)',
-      alignItems: 'center',
-    }}>
-      <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--muted)' }}>#{index + 1}</div>
-      <DriverPhoto src={driver?.image_url} name={`${driver?.first_name} ${driver?.last_name}`} size={32} />
-      <div style={{ fontSize: 12, fontWeight: 600 }}>{driver?.first_name} {driver?.last_name}</div>
-      <div style={{ fontFamily: 'var(--mono)', fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{appearances}</div>
+    <div className="detail-tv__row detail-tv__recordRow">
+      <div className="detail-tv__monoMuted">#{index + 1}</div>
+      <DriverPhoto src={driver?.image_url} name={name} size={28} rounded />
+      <div className="detail-tv__rowTitle" title={name}>{name || '—'}</div>
+      <div className="detail-tv__rowRight">{appearances}</div>
     </div>
   );
 }
@@ -244,210 +197,187 @@ export default function CircuitDetailPanel({ circuitId, onClose, onEdit, mode = 
   return (
     <Wrapper {...wrapperProps}>
       <PanelTag {...panelProps}>
-        <div style={{
-          position: 'sticky', top: 0, zIndex: 5,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '14px 16px', background: 'rgba(17,17,19,.9)',
-          borderBottom: '1px solid var(--line)',
-          backdropFilter: 'blur(8px)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button className="btn btn-ghost btn-xs" onClick={onClose}>Back</button>
-            <div style={{ fontWeight: 900, letterSpacing: '-.01em' }}>{title}</div>
-          </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className="detail-tv circuit-tv">
+          <div className="detail-tv__topbar">
+            <button type="button" className="detail-tv__back" onClick={onClose}>
+              ← Circuits
+            </button>
+            <div className="detail-tv__topTitle" title={title}>
+              {title}
+            </div>
             {isAdmin && circuit ? (
-              <button className="btn btn-blue btn-xs" onClick={() => onEdit?.(circuit)}>Edit Circuit</button>
-            ) : null}
+              <button type="button" className="detail-tv__edit" onClick={() => onEdit?.(circuit)}>
+                Edit Circuit
+              </button>
+            ) : (
+              <div />
+            )}
           </div>
-        </div>
 
-        {loading ? (
-          <div style={{ padding: 30, display: 'flex', justifyContent: 'center' }}><span className="spinner spinner-lg" /></div>
-        ) : error ? (
-          <div style={{ padding: 16 }}><div className="error-msg">{error}</div></div>
-        ) : circuit ? (
-          <div>
-            <div style={{
-              padding: '18px 16px 16px',
-              borderBottom: '1px solid var(--line)',
-              background: 'linear-gradient(180deg, rgba(220,38,38,.12), rgba(0,0,0,0))',
-            }}>
-              <div style={{
-                height: 140,
-                background: 'var(--bg3)',
-                borderRadius: 10,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 14,
-                position: 'relative',
-                overflow: 'hidden',
-              }}>
-                {circuit.layout_url ? (
-                  <img
-                    src={circuit.layout_url}
-                    alt={`${circuit.name} layout`}
-                    style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', filter: 'invert(1) opacity(.7)' }}
-                    onError={e => { e.target.style.display = 'none'; }}
-                  />
+          {loading ? (
+            <div className="detail-tv__loading">
+              <span className="spinner spinner-lg" />
+            </div>
+          ) : error ? (
+            <div style={{ padding: 16 }}>
+              <div className="error-msg">{error}</div>
+            </div>
+          ) : circuit ? (
+            <div className="detail-tv__content">
+              <div className="detail-tv__contentBar">
+                <button type="button" className="detail-tv__back" onClick={onClose}>
+                  ← Back
+                </button>
+                {isAdmin ? (
+                  <button type="button" className="detail-tv__edit" onClick={() => onEdit?.(circuit)}>
+                    Edit Circuit
+                  </button>
                 ) : (
-                  <span style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--muted)' }}>NO LAYOUT</span>
+                  <div />
                 )}
               </div>
-
-              <div style={{ marginBottom: 12 }}>
-                <div style={{ fontFamily: 'var(--sans)', fontSize: 22, fontWeight: 900, letterSpacing: '-.02em', lineHeight: 1.1 }}>
-                  {circuit.name}
-                </div>
-                <div style={{ marginTop: 4, fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--sub)' }}>
-                  {circuit.locality}{circuit.country ? `, ${circuit.country}` : ''}
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10 }}>
-                <StatCounter label="Total Races" value={computed.totalRaces} />
-                <StatCounter label="First Year" value={computed.firstYear} />
-                <StatCounter label="Latest Year" value={computed.lastYear} />
-                <StatCounter label="Length km" value={circuit.length_km ? `${circuit.length_km}` : null} />
-              </div>
-
-              {(circuit.lat || circuit.lng) ? (
-                <div style={{ marginTop: 10, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--muted)' }}>
-                  {circuit.lat}, {circuit.lng}
-                </div>
-              ) : null}
-            </div>
-
-            <div style={{ padding: '14px 16px', display: 'flex', gap: 8, flexWrap: 'wrap', borderBottom: '1px solid var(--line)' }}>
-              <TabButton id="history" active={tab === 'history'} onClick={setTab}>Race History</TabButton>
-              <TabButton id="records" active={tab === 'records'} onClick={setTab}>Records</TabButton>
-              <TabButton id="info" active={tab === 'info'} onClick={setTab}>Info</TabButton>
-            </div>
-
-            <div style={{ padding: '16px 16px 24px' }}>
-              {tab === 'history' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {races.length === 0 ? (
-                    <div className="info-msg">No races found for this circuit.</div>
-                  ) : (
-                    races.map(race => (
-                      <RaceHistoryRow key={race.id} race={race} winner={winnerMap.get(race.id)} />
-                    ))
-                  )}
-                </div>
-              ) : null}
-
-              {tab === 'records' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  {fastestLap ? (
-                    <RecordCard title="Fastest Lap Ever" records={[fastestLap]}>
-                      <div style={{
-                        padding: '10px 12px',
-                        display: 'grid',
-                        gridTemplateColumns: '1fr auto',
-                        gap: 10,
-                        alignItems: 'center',
-                      }}>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600 }}>
-                            {fastestLap.drivers?.first_name} {fastestLap.drivers?.last_name}
-                          </div>
-                          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--sub)' }}>
-                            Season {fastestLap.races?.season_year}
-                          </div>
-                        </div>
-                        <div style={{ fontFamily: 'var(--mono)', fontSize: 16, fontWeight: 700, color: 'var(--accent)' }}>
-                          {formatLapTime(fastestLap.lap_duration_ms)}
-                        </div>
-                      </div>
-                    </RecordCard>
-                  ) : null}
-
-                  <RecordCard title="Most Wins at This Circuit" records={winsCounted}>
-                    {winsCounted.map((record, i) => (
-                      <DriverWinsRow key={record.driver_id} record={record} index={i} />
-                    ))}
-                  </RecordCard>
-
-                  <RecordCard title="Most Appearances" records={appearancesCounted}>
-                    {appearancesCounted.map((record, i) => (
-                      <DriverAppearancesRow key={record.driver_id} record={record} index={i} />
-                    ))}
-                  </RecordCard>
-                </div>
-              ) : null}
-
-              {tab === 'info' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div style={{ border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                      <tbody>
-                        {[
-                          ['Full Name', circuit.name || '—'],
-                          ['City', circuit.locality || '—'],
-                          ['Country', circuit.country || '—'],
-                          ['Latitude', circuit.lat ?? '—'],
-                          ['Longitude', circuit.lng ?? '—'],
-                          ['Length', circuit.length_km ? `${circuit.length_km} km` : '—'],
-                        ].map(([k, v]) => (
-                          <tr key={k}>
-                            <td style={{ padding: '10px 12px', fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', borderBottom: '1px solid var(--line)', width: 110 }}>{k}</td>
-                            <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--line)', fontSize: 12, color: 'var(--text)' }}>{v}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+              <section className="circuit-tv__hero">
+                <div className="circuit-tv__heroGlow" aria-hidden="true" />
+                {circuit.layout_url ? (
+                  <img
+                    className="circuit-tv__heroImg"
+                    src={circuit.layout_url}
+                    alt={`${circuit.name} layout`}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                ) : null}
+                <div className="circuit-tv__heroOverlay">
+                  <div className="circuit-tv__heroTitle">{circuit.name}</div>
+                  <div className="circuit-tv__heroSub">
+                    {circuit.locality || '—'}
+                    {circuit.country ? `, ${circuit.country}` : ''}
                   </div>
-
-                  {circuit.layout_url ? (
-                    <div style={{ border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden', position: 'relative' }}>
-                      <img
-                        src={circuit.layout_url}
-                        alt={`${circuit.name} layout`}
-                        style={{ width: '100%', display: 'block', filter: 'invert(1) opacity(.5)' }}
-                        onError={e => { e.target.style.display = 'none'; }}
-                      />
-                      <div style={{
-                        position: 'absolute',
-                        inset: 0,
-                        backgroundImage: 'linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px)',
-                        backgroundSize: '20px 20px',
-                        pointerEvents: 'none',
-                      }} />
-                    </div>
-                  ) : null}
-
-                  {(circuit.lat && circuit.lng) ? (
-                    <div style={{ padding: 12, border: '1px solid var(--line)', borderRadius: 10, background: 'rgba(255,255,255,.02)' }}>
-                      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>
-                        Coordinates
-                      </div>
-                      <div style={{ fontFamily: 'var(--mono)', fontSize: 14, color: 'var(--text)' }}>
-                        {circuit.lat}, {circuit.lng}
-                      </div>
-                      <a
-                        href={`https://www.google.com/maps?q=${circuit.lat},${circuit.lng}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn btn-ghost btn-xs"
-                        style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                      >
-                        Open in Google Maps ↗
-                      </a>
-                    </div>
-                  ) : null}
-
-                  {circuit.wiki_url ? (
-                    <a className="btn btn-ghost" href={circuit.wiki_url} target="_blank" rel="noreferrer" style={{ width: 'fit-content' }}>
-                      Wikipedia
-                    </a>
-                  ) : null}
                 </div>
-              ) : null}
+              </section>
+
+              <div className="detail-tv__stats">
+                <div className="detail-tv__stat">
+                  <div className="detail-tv__statLabel">Total Races</div>
+                  <div className="detail-tv__statValue">{computed.totalRaces ?? '—'}</div>
+                </div>
+                <div className="detail-tv__vdiv" />
+                <div className="detail-tv__stat">
+                  <div className="detail-tv__statLabel">First Year</div>
+                  <div className="detail-tv__statValue">{computed.firstYear ?? '—'}</div>
+                </div>
+                <div className="detail-tv__vdiv" />
+                <div className="detail-tv__stat">
+                  <div className="detail-tv__statLabel">Latest Year</div>
+                  <div className="detail-tv__statValue">{computed.lastYear ?? '—'}</div>
+                </div>
+                <div className="detail-tv__vdiv" />
+                <div className="detail-tv__stat">
+                  <div className="detail-tv__statLabel">Length</div>
+                  <div className="detail-tv__statValue">{circuit.length_km ? `${circuit.length_km} km` : '—'}</div>
+                </div>
+              </div>
+
+              <div className="detail-tv__tabs">
+                <TabButton id="history" active={tab === 'history'} onClick={setTab}>
+                  Race History
+                </TabButton>
+                <TabButton id="records" active={tab === 'records'} onClick={setTab}>
+                  Records
+                </TabButton>
+                <TabButton id="info" active={tab === 'info'} onClick={setTab}>
+                  Info
+                </TabButton>
+              </div>
+
+              <div className="detail-tv__body">
+                {tab === 'history' ? (
+                  <div className="detail-tv__rows">
+                    {races.length === 0 ? (
+                      <div className="info-msg">No races found for this circuit.</div>
+                    ) : (
+                      races.map((race) => <RaceHistoryRow key={race.id} race={race} winner={winnerMap.get(race.id)} />)
+                    )}
+                  </div>
+                ) : null}
+
+                {tab === 'records' ? (
+                  <div className="detail-tv__stack">
+                    {fastestLap ? (
+                      <div className="detail-tv__section">
+                        <div className="detail-tv__sectionTitle">Fastest Lap Ever</div>
+                        <div className="detail-tv__row detail-tv__recordRow">
+                          <div className="detail-tv__rowTitle">
+                            {fastestLap.drivers ? `${fastestLap.drivers.first_name} ${fastestLap.drivers.last_name}` : '—'}
+                            <div className="detail-tv__rowSub">Season {fastestLap.races?.season_year ?? '—'}</div>
+                          </div>
+                          <div className="detail-tv__time">{formatLapTime(fastestLap.lap_duration_ms)}</div>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    <RecordCard title="Most Wins at This Circuit" records={winsCounted} renderItem={(record, i) => (
+                      <DriverWinsRow key={record.driver_id || i} record={record} index={i} />
+                    )} />
+
+                    <RecordCard title="Most Appearances" records={appearancesCounted} renderItem={(record, i) => (
+                      <DriverAppearancesRow key={record.driver_id || i} record={record} index={i} />
+                    )} />
+                  </div>
+                ) : null}
+
+                {tab === 'info' ? (
+                  <div className="detail-tv__stack">
+                    <div className="detail-tv__kv">
+                      {[
+                        ['Full Name', circuit.name || '—'],
+                        ['City', circuit.locality || '—'],
+                        ['Country', circuit.country || '—'],
+                        ['Length', circuit.length_km ? `${circuit.length_km} km` : '—'],
+                        ['Latitude', circuit.lat ?? '—'],
+                        ['Longitude', circuit.lng ?? '—'],
+                      ].map(([k, v], idx) => (
+                        <div key={k} className={`detail-tv__kvRow ${idx % 2 ? 'is-alt' : ''}`}>
+                          <div className="detail-tv__kvKey">{k}</div>
+                          <div className="detail-tv__kvVal">{v}</div>
+                        </div>
+                      ))}
+                      {(circuit.lat && circuit.lng) ? (
+                        <div className="detail-tv__kvRow is-alt">
+                          <div className="detail-tv__kvKey">Maps</div>
+                          <div className="detail-tv__kvVal">
+                            <a className="detail-tv__link" href={`https://www.google.com/maps?q=${circuit.lat},${circuit.lng}`} target="_blank" rel="noreferrer">
+                              Open in Google Maps ↗
+                            </a>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {circuit.layout_url ? (
+                      <div className="circuit-tv__layoutWide">
+                        <img
+                          src={circuit.layout_url}
+                          alt={`${circuit.name} layout`}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    ) : null}
+
+                    {circuit.wiki_url ? (
+                      <a className="detail-tv__pill" href={circuit.wiki_url} target="_blank" rel="noreferrer">
+                        ↗ Wikipedia
+                      </a>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </PanelTag>
     </Wrapper>
   );

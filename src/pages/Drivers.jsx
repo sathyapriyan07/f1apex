@@ -184,20 +184,16 @@ function DriverForm({ initial, teams, onSave, onCancel, saving, error }) {
 // ── Shared sub-components exported for other pages ────────────────────────────
 export function SectionHead({ title, count, search, setSearch, onAdd, extra }) {
   return (
-    <div className="section-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
-      <div className="section-head__title" style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-        <div>
-          <div className="page-subtitle">F1 Database</div>
-          <h1 className="page-title" style={{ marginTop: 6 }}>{title}</h1>
-        </div>
-        <span className="section-head__count" style={{ fontFamily: 'var(--sans)', fontSize: 12, color: 'var(--muted)', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>
-          {count} items
-        </span>
+    <div className="section-head">
+      <div className="section-head__title">
+        <h1 className="page-title">
+          {title} <span className="section-head__count">({count})</span>
+        </h1>
       </div>
-      <div className="section-head__actions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div className="section-head__actions">
         {extra}
-        <input className="section-head__search" style={{ minWidth: 180 }} placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)} />
-        {onAdd && <button className="btn btn-red" onClick={onAdd}>+ Add</button>}
+        <input className="section-head__search" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
+        {onAdd && <button className="btn btn-red" onClick={onAdd}>Add</button>}
       </div>
     </div>
   );
@@ -205,11 +201,15 @@ export function SectionHead({ title, count, search, setSearch, onAdd, extra }) {
 
 export function ViewToggle({ view, setView }) {
   return (
-    <div style={{ display: 'flex', border: '1px solid var(--line2)', borderRadius: 4, overflow: 'hidden' }}>
-      {[['grid','⊞'],['list','☰']].map(([v,icon]) => (
-        <button key={v} onClick={() => setView(v)}
-          style={{ padding: '5px 10px', background: view === v ? 'var(--bg3)' : 'transparent', border: 'none', color: view === v ? 'var(--text)' : 'var(--muted)', cursor: 'pointer', fontSize: 14, transition: 'all .1s' }}>
-          {icon}
+    <div className="view-toggle" role="tablist" aria-label="View">
+      {['grid', 'list'].map((v) => (
+        <button
+          key={v}
+          type="button"
+          className={`view-toggle__btn ${view === v ? 'is-active' : ''}`}
+          onClick={() => setView(v)}
+        >
+          {v === 'grid' ? 'Grid' : 'List'}
         </button>
       ))}
     </div>

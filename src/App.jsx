@@ -49,8 +49,77 @@ function Inner() {
 
 function AppShell({ onOpenAuth }) {
   const { isAdmin } = useAuth();
-  const [tab, setTab] = useState('dashboard');
-  const [detail, setDetail] = useState(null); // { type: 'driver'|'team'|'circuit', id }
+
+  const validTabs = [
+    'dashboard', 'drivers', 'teams', 'seasons', 'circuits',
+    'races', 'results', 'standings', 'constructors',
+    'laptimes', 'charts', 'import', 'users',
+  ];
+  const validDetailTypes = ['driver', 'team', 'circuit'];
+
+  const normalizeTab = (value) => {
+    if (!value) return null;
+    const v = String(value).toLowerCase().trim();
+    return validTabs.includes(v) ? v : null;
+  };
+
+  const normalizeDetailType = (value) => {
+    if (!value) return null;
+    const v = String(value).toLowerCase().trim();
+    return validDetailTypes.includes(v) ? v : null;
+  };
+
+  const readSavedNav = () => {
+    try {
+      const raw = localStorage.getItem('f1db_nav');
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      const savedTab = normalizeTab(parsed?.tab);
+      if (!savedTab) return null;
+      const type = normalizeDetailType(parsed?.detail?.type);
+      const id = parsed?.detail?.id;
+      const detail = type && id ? { type, id: String(id) } : null;
+      return { tab: savedTab, detail };
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const parseHashNav = () => {
+    try {
+      const raw = window.location.hash.replace(/^#/, '');
+      if (!raw) return null;
+      const parts = raw.split('/').filter(Boolean);
+      const fromHashTab = normalizeTab(parts[0]);
+      if (!fromHashTab) return null;
+      if (parts.length === 3) {
+        const type = normalizeDetailType(parts[1]);
+        const id = parts[2];
+        if (type && id) return { tab: fromHashTab, detail: { type, id: String(id) } };
+      }
+      return { tab: fromHashTab, detail: null };
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const getInitialNav = () => {
+    const fromHash = parseHashNav();
+    if (fromHash) return fromHash;
+    const fromSaved = readSavedNav();
+    if (fromSaved) return fromSaved;
+    try {
+      const fromStorage = normalizeTab(localStorage.getItem('f1db_active_tab'));
+      if (fromStorage) return { tab: fromStorage, detail: null };
+    } catch (e) {
+      // ignore
+    }
+    return { tab: 'dashboard', detail: null };
+  };
+
+  const [nav, setNav] = useState(getInitialNav);
+  const tab = nav.tab;
+  const detail = nav.detail; // { type: 'driver'|'team'|'circuit', id } | null
   const [autoImport, setAutoImport] = useState(null);
 
   // Shared reference data loaded once
@@ -94,33 +163,96 @@ function AppShell({ onOpenAuth }) {
     const src = (hashParams.get('src') || query.get('src') || 'jolpica').toLowerCase();
     const source = src === 'ergast' ? 'ergast' : 'jolpica';
 
-    setTab('import');
+    handleSetTab('import');
     setAutoImport({ season, source });
   }, [isAdmin]);
 
-  const openDriver = (id) => { setDetail({ type: 'driver', id }); setTab('drivers'); };
-  const openTeam = (id) => { setDetail({ type: 'team', id }); setTab('teams'); };
-  const openCircuit = (id) => { setDetail({ type: 'circuit', id }); setTab('circuits'); };
-  const closeDetail = () => setDetail(null);
+  const writeNav = (next) => {
+    try {
+      localStorage.setItem('f1db_nav', JSON.stringify(next));
+      localStorage.setItem('f1db_active_tab', next.tab);
+    } catch (e) {
+      // ignore
+    }
+  };
 
-  const setTabWithClose = (nextTab) => { setDetail(null); setTab(nextTab); };
+  const hashForNav = (next) => {
+    if (next?.detail?.type && next?.detail?.id) return `${next.tab}/${next.detail.type}/${next.detail.id}`;
+    return next.tab;
+  };
+
+  const commitNav = (next) => {
+    setNav(next);
+    writeNav(next);
+    try {
+      window.location.hash = hashForNav(next);
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const handleSetTab = (nextTab) => {
+    const normalized = normalizeTab(nextTab) || 'dashboard';
+    commitNav({ tab: normalized, detail: null });
+  };
+
+  const handleOpenDetail = (type, id) => {
+    const normalizedType = normalizeDetailType(type);
+    if (!normalizedType || !id) return;
+    const normalizedId = String(id);
+    const targetTab =
+      normalizedType === 'driver' ? 'drivers'
+        : normalizedType === 'team' ? 'teams'
+          : 'circuits';
+    commitNav({ tab: targetTab, detail: { type: normalizedType, id: normalizedId } });
+  };
+
+  const handleCloseDetail = () => {
+    commitNav({ tab, detail: null });
+  };
+
+  useEffect(() => {
+    const onHashChange = () => {
+      const parsed = parseHashNav();
+      if (!parsed) return;
+      const sameTab = parsed.tab === tab;
+      const sameDetail =
+        (!parsed.detail && !detail) ||
+        (parsed.detail && detail && parsed.detail.type === detail.type && parsed.detail.id === detail.id);
+      if (sameTab && sameDetail) return;
+      setNav(parsed);
+      writeNav(parsed);
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, [tab, detail]);
+
+  useEffect(() => {
+    if (!isAdmin && (tab === 'import' || tab === 'users')) {
+      commitNav({ tab: 'dashboard', detail: null });
+    }
+  }, [isAdmin, tab]);
+
+  const openDriver = (id) => handleOpenDetail('driver', id);
+  const openTeam = (id) => handleOpenDetail('team', id);
+  const openCircuit = (id) => handleOpenDetail('circuit', id);
 
   const renderTab = () => {
     switch (tab) {
-      case 'dashboard':    return <Dashboard setTab={setTabWithClose} />;
+      case 'dashboard':    return <Dashboard setTab={handleSetTab} />;
       case 'drivers':      return (
         <DriversPage
           teams={teams}
           detailId={detail?.type === 'driver' ? detail.id : null}
           onOpenDriver={openDriver}
-          onCloseDetail={closeDetail}
+          onCloseDetail={handleCloseDetail}
         />
       );
       case 'teams':        return (
         <TeamsPage
           detailId={detail?.type === 'team' ? detail.id : null}
           onOpenTeam={openTeam}
-          onCloseDetail={closeDetail}
+          onCloseDetail={handleCloseDetail}
         />
       );
       case 'seasons':      return <SeasonsPage />;
@@ -128,7 +260,7 @@ function AppShell({ onOpenAuth }) {
         <CircuitsPage
           detailId={detail?.type === 'circuit' ? detail.id : null}
           onOpenCircuit={openCircuit}
-          onCloseDetail={closeDetail}
+          onCloseDetail={handleCloseDetail}
         />
       );
       case 'races':        return <RacesPage circuits={circuits} seasons={seasons} />;
@@ -146,12 +278,12 @@ function AppShell({ onOpenAuth }) {
         />
       ) : null;
       case 'users':        return isAdmin ? <UsersPage /> : null;
-      default:             return <Dashboard setTab={setTab} />;
+      default:             return <Dashboard setTab={handleSetTab} />;
     }
   };
 
   return (
-    <Layout tab={tab} setTab={setTabWithClose} onSignIn={onOpenAuth}>
+    <Layout tab={tab} setTab={handleSetTab} onSignIn={onOpenAuth}>
       {renderTab()}
     </Layout>
   );

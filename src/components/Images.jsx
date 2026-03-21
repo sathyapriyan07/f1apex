@@ -99,44 +99,110 @@ export function DriverCard({ driver, teamName, teamLogoUrl, teamColor, onClick, 
   const code = driver?.code || '—';
   const nationality = driver?.nationality || '—';
   const color = teamColor || 'var(--red)';
+  const numberLabel = number ? `#${number}` : '—';
 
   return (
     <div className="driver-card" style={{ ['--team-color']: color }} onClick={onClick}>
       <div className="driver-card__stripe" />
 
-      {isAdmin ? (
-        <div className="driver-card__actions" onClick={(e) => e.stopPropagation()}>
-          <button className="btn btn-ghost btn-xs" onClick={onEdit} type="button">
-            Edit
-          </button>
-          <button className="btn btn-danger btn-xs" onClick={onDelete} type="button">
-            Del
-          </button>
-        </div>
-      ) : null}
-
       <div className="driver-card__number" aria-hidden="true">
         {number || ' '}
       </div>
 
-      {driver?.image_url ? (
-        <img className="driver-card__photo" src={driver.image_url} alt={fullName} onError={(e) => (e.currentTarget.style.display = 'none')} />
-      ) : null}
-
-      <div className="driver-card__name">
-        <div className="driver-card__first">{driver?.first_name || '—'}</div>
-        <div className="driver-card__last">{driver?.last_name || '—'}</div>
+      <div className="driver-card__media">
+        <Img
+          src={driver?.image_url}
+          alt={fullName}
+          className="driver-card__photo"
+          style={{ width: '100%', height: '100%' }}
+          imgStyle={{ objectFit: 'cover', objectPosition: 'top center' }}
+          fallback={
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 28, color: 'var(--muted)', fontWeight: 700, letterSpacing: '.06em' }}>
+              {code}
+            </span>
+          }
+        />
       </div>
 
-      <div className="driver-card__meta">
-        <span>{code}</span>
-        <span>{nationality}</span>
-        {teamName ? <span style={{ color: 'var(--text)', letterSpacing: '.02em' }}>{teamName}</span> : null}
-      </div>
+      <div className="driver-card__body">
+        <div className="driver-card__topline">
+          <span>{numberLabel}</span>
+        </div>
+        <div className="driver-card__name">
+          <div className="driver-card__first">{driver?.first_name || '—'}</div>
+          <div className="driver-card__last">{driver?.last_name || '—'}</div>
+        </div>
 
-      {teamLogoUrl ? (
-        <img className="driver-card__teamlogo" src={teamLogoUrl} alt="" onError={(e) => (e.currentTarget.style.display = 'none')} />
-      ) : null}
+        <div className="driver-card__meta">
+          <span>{nationality}</span>
+        </div>
+
+        <div
+          className="driver-card__teamrow"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            marginTop: 8,
+            minHeight: 24,
+          }}
+        >
+          {teamLogoUrl ? (
+            <img
+              src={teamLogoUrl}
+              alt={teamName || ''}
+              title={teamName || ''}
+              style={{
+                width: 20,
+                height: 20,
+                objectFit: 'contain',
+                opacity: 1,
+                padding: 2,
+                borderRadius: 6,
+                background: 'rgba(255,255,255,0.06)',
+                flexShrink: 0,
+              }}
+              onError={(e) => (e.currentTarget.style.display = 'none')}
+            />
+          ) : null}
+        </div>
+
+        {isAdmin ? (
+          <div
+            style={{
+              display: 'flex',
+              gap: 6,
+              padding: '10px 0 0 0',
+              marginTop: 'auto',
+              borderTop: '1px solid var(--line)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="btn btn-ghost btn-xs"
+              style={{ flex: 1, justifyContent: 'center' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit?.(e);
+              }}
+              type="button"
+            >
+              Edit
+            </button>
+            <button
+              className="btn btn-danger btn-xs"
+              style={{ flex: 1, justifyContent: 'center' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete?.(e);
+              }}
+              type="button"
+            >
+              Del
+            </button>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

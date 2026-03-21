@@ -17,6 +17,16 @@ function formatCountdown(ms) {
   return days > 0 ? `${days}d ${hh}:${mm}:${ss}` : `${hh}:${mm}:${ss}`;
 }
 
+function countdownParts(ms) {
+  const clamped = Math.max(0, ms);
+  const totalSec = Math.floor(clamped / 1000);
+  const days = Math.floor(totalSec / 86400);
+  const hrs = Math.floor((totalSec % 86400) / 3600);
+  const min = Math.floor((totalSec % 3600) / 60);
+  const sec = totalSec % 60;
+  return { days, hrs, min, sec };
+}
+
 export default function Dashboard({ setTab }) {
   const { isAdmin } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -143,153 +153,204 @@ export default function Dashboard({ setTab }) {
   const latestRaces = useMemo(() => {
     const list = [...(races || [])];
     list.sort((a, b) => (b.season_year - a.season_year) || (b.round - a.round));
-    return list.slice(0, 5);
+    return list.slice(0, 6);
   }, [races]);
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}><span className="spinner spinner-lg" /></div>;
 
+  const cd = countdownParts(countdownMs);
+  const country = heroRace?.circuits?.country || '';
+  const heroLabel = heroMode === 'upcoming' ? 'NEXT RACE' : heroMode === 'latest' ? 'LATEST RESULT' : 'OVERVIEW';
+  const heroName = heroRace?.name || 'No races yet';
+  const nameParts = heroName.split(/Grand Prix/i);
+  const heroNameA = (nameParts[0] || heroName).trim();
+  const heroNameB = /grand prix/i.test(heroName) ? 'Grand Prix' : (nameParts[1] || '').trim();
+  const metaBits = [
+    heroRace?.season_year ? String(heroRace.season_year) : null,
+    heroRace?.round ? `Round ${heroRace.round}` : null,
+    country ? country : null,
+    heroRace?.date || null,
+  ].filter(Boolean);
+
+  const hasLayout = !!heroRace?.circuits?.layout_url;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+    <div className="dashboard-tv">
       {error ? <div className="error-msg">{error}</div> : null}
 
-      {/* Hero: next race countdown */}
-      <div className="card" style={{ padding: 18, position: 'relative', overflow: 'hidden' }}>
-        <div className="dashboard-hero-top" style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="page-subtitle">{heroMode === 'upcoming' ? 'Next Race' : heroMode === 'latest' ? 'Latest Result' : 'Overview'}</div>
-            <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: '-.02em', marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {heroRace?.name || 'No races yet'}
-            </div>
-            {heroRace ? (
-              <div style={{ marginTop: 10, display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
-                <span style={{ color: 'var(--muted)', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', fontSize: 12 }}>
-                  {heroRace.season_year} • Round {heroRace.round}
-                </span>
-                {heroRace.circuits?.country ? (
-                  <span style={{ color: 'var(--muted)', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', fontSize: 12 }}>
-                    {heroRace.circuits.country}
+      <section className="dashboard-tv__hero">
+        <div className="dashboard-tv__hero-inner">
+          <div className={`dashboard-tv__hero-left ${hasLayout ? 'has-layout' : 'no-layout'}`}>
+            <div className="dashboard-tv__titleGlow" aria-hidden="true" />
+            <div className="dashboard-tv__hero-label">{heroLabel}</div>
+            <h1 className="dashboard-tv__hero-title" title={heroName}>
+              <span className="dashboard-tv__hero-titleA">{heroNameA}</span>
+              {heroNameB ? <span className="dashboard-tv__hero-titleB">{heroNameB}</span> : null}
+            </h1>
+            {metaBits.length ? (
+              <div className="dashboard-tv__hero-meta">
+                {metaBits.map((b, i) => (
+                  <span key={`${b}-${i}`} className="dashboard-tv__hero-metaBit">
+                    {b}
+                    {i < metaBits.length - 1 ? <span className="dashboard-tv__dot">·</span> : null}
                   </span>
-                ) : null}
-                {heroRace.date ? (
-                  <span style={{ color: 'var(--text)', fontWeight: 800, fontSize: 12 }}>
-                    {heroRace.date}
-                  </span>
-                ) : null}
+                ))}
               </div>
             ) : null}
+
+            {heroMode === 'upcoming' ? (
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'flex-end',
+                  gap: 0,
+                  marginTop: 24,
+                }}
+              >
+                {[
+                  [String(cd.days), 'DAYS'],
+                  [String(cd.hrs).padStart(2, '0'), 'HRS'],
+                  [String(cd.min).padStart(2, '0'), 'MIN'],
+                  [String(cd.sec).padStart(2, '0'), 'SEC'],
+                ].map(([num, label], i) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'flex-end', gap: 0 }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 72, lineHeight: 1, letterSpacing: '-0.04em', color: 'white' }}>
+                        {num}
+                      </div>
+                      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 4 }}>
+                        {label}
+                      </div>
+                    </div>
+                    {i < 3 ? (
+                      <div style={{ fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 48, color: 'var(--red)', lineHeight: 1, margin: '0 8px 14px', opacity: 0.6 }}>
+                        :
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="dashboard-tv__quicklinks">
+              {['Schedule', 'Results', 'Standings'].map((label) => (
+                <button
+                  key={label}
+                  onClick={() => setTab(label.toLowerCase())}
+                  type="button"
+                  style={{
+                    background: 'rgba(255,255,255,0.08)',
+                    border: 'none',
+                    borderRadius: 980,
+                    padding: '8px 18px',
+                    fontFamily: 'var(--sans)',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: 'white',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s cubic-bezier(0.34,1.56,0.64,1)',
+                    letterSpacing: '-0.01em',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.14)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {heroRace?.circuits?.layout_url ? (
             <img
-              className="dashboard-hero-layout"
+              className="dashboard-tv__hero-layout"
               src={heroRace.circuits.layout_url}
               alt=""
-              style={{ width: 220, height: 130, objectFit: 'contain', filter: 'invert(1) opacity(.55)' }}
               onError={(e) => (e.currentTarget.style.display = 'none')}
             />
           ) : null}
         </div>
+      </section>
 
-        {heroMode === 'upcoming' ? (
-          <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ color: 'var(--muted)', fontSize: 12, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase' }}>
-              Countdown
-            </div>
-            <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: '.04em' }}>
-              {formatCountdown(countdownMs)}
-            </div>
+      <section className="dashboard-tv__standings">
+        <div className="dashboard-tv__standings-inner">
+          <div className="dashboard-tv__col">
+            <div className="dashboard-tv__h2">Driver Standings</div>
+            {driverTop.length ? (
+              <div className="dashboard-tv__list">
+                {driverTop.map((r, idx) => (
+                  <div key={r.id} className={`dashboard-tv__row ${idx === driverTop.length - 1 ? 'is-last' : ''}`}>
+                    <div className="dashboard-tv__pos" style={{ color: posColor(r.position) }}>{r.position}</div>
+                    <div className="dashboard-tv__bar" style={{ background: r.teams?.team_color || 'var(--red)' }} />
+                    <div className="dashboard-tv__avatar">
+                      <DriverPhoto src={r.drivers?.image_url} name={`${r.drivers?.first_name || ''} ${r.drivers?.last_name || ''}`} size={32} rounded />
+                    </div>
+                    <div className="dashboard-tv__name" title={r.drivers ? `${r.drivers.first_name} ${r.drivers.last_name}` : ''}>
+                      {r.drivers ? `${r.drivers.first_name} ${r.drivers.last_name}` : '—'}
+                    </div>
+                    <div className="dashboard-tv__pts">{Number(r.points) || 0}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty" style={{ padding: 22 }}>No standings yet.</div>
+            )}
+            <button className="dashboard-tv__viewall" onClick={() => setTab('standings')} type="button">View All →</button>
           </div>
-        ) : null}
 
-        <div style={{ marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button className="btn btn-red btn-sm" onClick={() => setTab('races')} type="button">Schedule</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setTab('results')} type="button">Results</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setTab('standings')} type="button">Standings</button>
-        </div>
-      </div>
-
-      {/* Widgets */}
-      <div className="dashboard-widgets" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        <div className="card" style={{ padding: 14 }}>
-          <div className="page-subtitle">Driver Standings</div>
-          {driverTop.length ? (
-            <div style={{ marginTop: 10 }}>
-              {driverTop.map((r) => (
-                <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 8px', borderTop: '1px solid rgba(255,255,255,.06)' }}>
-                  <span style={{ width: 22, fontWeight: 900, color: posColor(r.position) }}>{r.position}</span>
-                  <div style={{ width: 4, height: 22, borderRadius: 2, background: r.teams?.team_color || 'var(--red)' }} />
-                  <DriverPhoto src={r.drivers?.image_url} name={`${r.drivers?.first_name || ''} ${r.drivers?.last_name || ''}`} size={32} rounded />
-                  <span style={{ fontWeight: 900, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {r.drivers ? `${r.drivers.first_name} ${r.drivers.last_name}` : '—'}
-                  </span>
-                  <span style={{ fontWeight: 900 }}>{Number(r.points) || 0}</span>
-                </div>
-              ))}
-              <div style={{ marginTop: 10 }}>
-                <button className="btn btn-ghost btn-sm" onClick={() => setTab('standings')} type="button">View all</button>
-              </div>
-            </div>
-          ) : (
-            <div className="empty" style={{ padding: 22 }}>No standings yet.</div>
-          )}
-        </div>
-
-        <div className="card" style={{ padding: 14 }}>
-          <div className="page-subtitle">Constructor Standings</div>
-          {constructorTop.length ? (
-            <div style={{ marginTop: 10 }}>
-              {constructorTop.map((r) => (
-                <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 8px', borderTop: '1px solid rgba(255,255,255,.06)' }}>
-                  <span style={{ width: 22, fontWeight: 900, color: posColor(r.position) }}>{r.position}</span>
-                  <div style={{ width: 4, height: 22, borderRadius: 2, background: r.teams?.team_color || 'var(--red)' }} />
-                  <TeamLogo src={r.teams?.logo_url} name={r.teams?.name} size={26} />
-                  <span style={{ fontWeight: 900, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {r.teams?.name || '—'}
-                  </span>
-                  <span style={{ fontWeight: 900 }}>{Number(r.points) || 0}</span>
-                </div>
-              ))}
-              <div style={{ marginTop: 10 }}>
-                <button className="btn btn-ghost btn-sm" onClick={() => setTab('standings')} type="button">View all</button>
-              </div>
-            </div>
-          ) : (
-            <div className="empty" style={{ padding: 22 }}>No standings yet.</div>
-          )}
-        </div>
-      </div>
-
-      {/* Latest races (horizontal scroll) */}
-      <div>
-        <div className="page-subtitle">Latest Races</div>
-        <div className="dashboard-latest-races" style={{ marginTop: 10, display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6 }}>
-          {latestRaces.map((r) => (
-            <div key={r.id} className="card latest-race-card" style={{ minWidth: 280, padding: 14, flexShrink: 0 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ color: 'var(--muted)', fontSize: 12, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase' }}>
-                    {r.season_year} • Round {r.round}
+          <div className="dashboard-tv__col">
+            <div className="dashboard-tv__h2">Constructor Standings</div>
+            {constructorTop.length ? (
+              <div className="dashboard-tv__list">
+                {constructorTop.map((r, idx) => (
+                  <div key={r.id} className={`dashboard-tv__row ${idx === constructorTop.length - 1 ? 'is-last' : ''}`}>
+                    <div className="dashboard-tv__pos" style={{ color: posColor(r.position) }}>{r.position}</div>
+                    <div className="dashboard-tv__bar" style={{ background: r.teams?.team_color || 'var(--red)' }} />
+                    <div className="dashboard-tv__teamLogo">
+                      <TeamLogo src={r.teams?.logo_url} name={r.teams?.name} size={28} />
+                    </div>
+                    <div className="dashboard-tv__name" title={r.teams?.name || ''}>
+                      {r.teams?.name || '—'}
+                    </div>
+                    <div className="dashboard-tv__pts">{Number(r.points) || 0}</div>
                   </div>
-                  <div style={{ fontWeight: 900, fontSize: 16, marginTop: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {r.name}
-                  </div>
-                  <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 6 }}>
-                    {r.circuits?.country || '—'}{r.date ? ` • ${r.date}` : ''}
-                  </div>
-                </div>
-                {r.circuits?.layout_url ? (
-                  <img
-                    src={r.circuits.layout_url}
-                    alt=""
-                    style={{ width: 96, height: 60, objectFit: 'contain', filter: 'invert(1) opacity(.45)' }}
-                    onError={(e) => (e.currentTarget.style.display = 'none')}
-                  />
-                ) : null}
+                ))}
               </div>
-            </div>
-          ))}
+            ) : (
+              <div className="empty" style={{ padding: 22 }}>No standings yet.</div>
+            )}
+            <button className="dashboard-tv__viewall" onClick={() => setTab('standings')} type="button">View All →</button>
+          </div>
         </div>
-      </div>
+      </section>
+
+      <section className="dashboard-tv__latest">
+        <div className="dashboard-tv__latest-inner">
+          <div className="dashboard-tv__h2">Latest Races</div>
+          <div className="dashboard-tv__raceRow">
+            {latestRaces.map((r) => (
+              <div key={r.id} className="dashboard-tv__raceCard">
+                <div className="dashboard-tv__raceMedia">
+                  {r.circuits?.layout_url ? (
+                    <img
+                      src={r.circuits.layout_url}
+                      alt=""
+                      className="dashboard-tv__raceImg"
+                      onError={(e) => (e.currentTarget.style.display = 'none')}
+                    />
+                  ) : (
+                    <div className="dashboard-tv__raceFallback">{r.circuits?.country || '—'}</div>
+                  )}
+                </div>
+                <div className="dashboard-tv__raceBody">
+                  <div className="dashboard-tv__raceRound">{r.season_year} · Round {r.round}</div>
+                  <div className="dashboard-tv__raceName" title={r.name}>{r.name}</div>
+                  <div className="dashboard-tv__raceSub">{(r.circuits?.country || '—')}{r.date ? ` · ${r.date}` : ''}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

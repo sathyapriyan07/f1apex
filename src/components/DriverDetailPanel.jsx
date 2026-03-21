@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { db, driver_career } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
-import { CircuitLayout, DriverPhoto, TeamLogo } from './Images';
+import { TeamLogo } from './Images';
 
 function calcAge(dob) {
   if (!dob) return null;
@@ -27,37 +27,15 @@ function groupBy(arr, keyFn) {
 }
 
 function StatusBadge({ active }) {
-  const cls = active ? 'badge badge-green' : 'badge badge-muted';
-  return <span className={cls}>{active ? 'ACTIVE' : 'RETIRED'}</span>;
-}
-
-function Stat({ label, value }) {
-  return (
-    <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid var(--line)', borderRadius: 6, padding: '10px 10px' }}>
-      <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--muted)', letterSpacing: '.09em', textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ marginTop: 6, fontFamily: 'var(--mono)', fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>{value}</div>
-    </div>
-  );
+  return <span className={`driver-tv__status ${active ? 'is-active' : ''}`}>{active ? 'ACTIVE' : 'RETIRED'}</span>;
 }
 
 function TabButton({ id, active, onClick, children }) {
   return (
     <button
+      type="button"
       onClick={() => onClick(id)}
-      style={{
-        padding: '8px 10px',
-        background: active ? 'rgba(220,38,38,.14)' : 'transparent',
-        border: `1px solid ${active ? 'rgba(220,38,38,.35)' : 'var(--line2)'}`,
-        borderRadius: 6,
-        color: active ? '#fff' : 'var(--sub)',
-        cursor: 'pointer',
-        fontFamily: 'var(--sans)',
-        fontWeight: 800,
-        fontSize: 11,
-        letterSpacing: '.04em',
-        textTransform: 'uppercase',
-        transition: 'all .12s',
-      }}
+      className={`detail-tv__tab ${active ? 'is-active' : ''}`}
     >
       {children}
     </button>
@@ -68,16 +46,8 @@ function Pill({ active, onClick, children }) {
   return (
     <button
       onClick={onClick}
-      className="btn btn-xs"
-      style={{
-        background: active ? 'var(--bg3)' : 'transparent',
-        border: `1px solid ${active ? 'var(--line2)' : 'var(--line)'}`,
-        color: active ? 'var(--text)' : 'var(--muted)',
-        padding: '3px 8px',
-        fontFamily: 'var(--mono)',
-        letterSpacing: '.06em',
-        textTransform: 'none',
-      }}
+      type="button"
+      className={`driver-tv__year ${active ? 'is-active' : ''}`}
     >
       {children}
     </button>
@@ -87,30 +57,23 @@ function Pill({ active, onClick, children }) {
 function PointsChart({ data, selectedYear, onSelectYear }) {
   const max = Math.max(1, ...data.map(d => d.points || 0));
   return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 8, background: 'rgba(255,255,255,.02)' }}>
-      {data.map(d => {
-        const h = Math.round(((d.points || 0) / max) * 56) + 6;
+    <div className="driver-tv__chart" aria-label="Points per season">
+      {data.map((d) => {
+        const h = Math.round(((d.points || 0) / max) * 56);
         const active = selectedYear === d.year;
         return (
-          <button
-            key={d.year}
-            onClick={() => onSelectYear(active ? null : d.year)}
-            title={`${d.year}: ${d.points} pts`}
-            style={{
-              width: 18,
-              height: h,
-              background: active ? 'var(--accent)' : 'rgba(255,255,255,.1)',
-              border: `1px solid ${active ? 'rgba(232,180,0,.45)' : 'var(--line)'}`,
-              borderRadius: 4,
-              cursor: 'pointer',
-              transition: 'all .12s',
-            }}
-          />
+          <div key={d.year} className="driver-tv__barWrap">
+            <button
+              type="button"
+              className={`driver-tv__bar ${active ? 'is-active' : ''}`}
+              onClick={() => onSelectYear(active ? null : d.year)}
+              title={`${d.year}: ${d.points} pts`}
+              style={{ height: Math.max(6, h) }}
+            />
+            <div className="driver-tv__barLabel">{d.year}</div>
+          </div>
         );
       })}
-      <div style={{ marginLeft: 'auto', fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)' }}>
-        Points / season
-      </div>
     </div>
   );
 }
@@ -122,48 +85,51 @@ function ResultRow({ r }) {
   const grid = r.grid_position == null ? '—' : r.grid_position;
   const points = r.points == null ? 0 : r.points;
   const status = r.status || (r.position == null ? 'DNF' : 'Finished');
-  const statusCls =
-    status.toLowerCase().includes('dnf') || status.toLowerCase().includes('dns') ? 'badge badge-red'
-      : status.toLowerCase().includes('lap') ? 'badge badge-yellow'
-        : 'badge badge-green';
+  const statusLower = String(status).toLowerCase();
+  const statusTone =
+    statusLower.includes('dnf') || statusLower.includes('dns') ? 'red'
+      : statusLower.includes('lap') ? 'blue'
+        : 'green';
+
+  const posNum = Number(pos);
+  const posColor = posNum === 1 ? 'var(--yellow)' : posNum === 2 ? '#e5e5ea' : posNum === 3 ? '#c96b2e' : 'var(--text)';
 
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: '120px 1fr auto',
-      gap: 12,
-      padding: 12,
-      border: '1px solid var(--line)',
-      borderRadius: 10,
-      background: 'rgba(255,255,255,.02)',
-      alignItems: 'center',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <CircuitLayout src={circuit?.layout_url} name={circuit?.name} width={74} height={50} />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)' }}>
-            {race?.season_year ?? '—'} · R{race?.round ?? '—'}
-          </div>
-          <div style={{ fontWeight: 800, fontSize: 12, lineHeight: 1.1 }}>
-            {race?.name || 'Race'}
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--sub)' }}>
-            {circuit?.country || circuit?.locality || '—'}
-          </div>
+    <div className="detail-tv__row driver-tv__resultRow">
+      <div className="driver-tv__resultPos" style={{ color: posColor }}>
+        {pos}
+      </div>
+
+      <div className="driver-tv__resultThumb">
+        {circuit?.layout_url ? (
+          <img
+            src={circuit.layout_url}
+            alt=""
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        ) : null}
+      </div>
+
+      <div className="driver-tv__resultMain">
+        <div className="driver-tv__resultName" title={race?.name || ''}>
+          {race?.name || 'Race'}
+        </div>
+        <div className="driver-tv__resultSub">
+          {race?.season_year ?? '—'} · R{race?.round ?? '—'} · {circuit?.country || circuit?.locality || '—'}
+        </div>
+        <div className="driver-tv__resultMeta">
+          <span className={`driver-tv__pill driver-tv__pill--${statusTone}`}>{status}</span>
+          {r.fastest_lap ? <span className="driver-tv__pill driver-tv__pill--blue">FL</span> : null}
+          <span className="driver-tv__monoMuted">Grid <span className="driver-tv__monoStrong">{grid}</span></span>
+          <span className="driver-tv__monoMuted">Finish <span className="driver-tv__monoStrong">{pos}</span></span>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-        <span className={statusCls}>{status}</span>
-        {r.fastest_lap ? <span className="badge badge-blue">FL</span> : null}
-        <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--sub)' }}>Grid <span style={{ color: 'var(--text)', fontWeight: 700 }}>{grid}</span></span>
-        <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--sub)' }}>Finish <span style={{ color: 'var(--text)', fontWeight: 700 }}>{pos}</span></span>
-        <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--sub)' }}>Pts <span style={{ color: 'var(--accent)', fontWeight: 800 }}>{points}</span></span>
-        {r.time_or_gap ? <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--muted)' }}>{r.time_or_gap}</span> : null}
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
-        {r.teams?.logo_url ? <TeamLogo src={r.teams.logo_url} name={r.teams?.name} size={26} /> : null}
+      <div className="driver-tv__resultRight">
+        {points > 0 ? <div className="driver-tv__points">{points}</div> : null}
+        {r.teams?.logo_url ? <TeamLogo src={r.teams.logo_url} name={r.teams?.name} size={20} /> : null}
       </div>
     </div>
   );
@@ -273,23 +239,21 @@ export default function DriverDetailPanel({ driverId, onClose, onEdit, mode = 'p
   return (
     <Wrapper {...wrapperProps}>
       <PanelTag {...panelProps}>
-        {/* Header */}
-        <div style={{
-          position: 'sticky', top: 0, zIndex: 5,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '14px 16px', background: 'rgba(17,17,19,.9)',
-          borderBottom: '1px solid var(--line)',
-          backdropFilter: 'blur(8px)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button className="btn btn-ghost btn-xs" onClick={onClose}>Back</button>
-            <div style={{ fontWeight: 900, letterSpacing: '-.01em' }}>{title}</div>
+        <div className="detail-tv driver-tv" style={driver?.teams?.team_color ? { ['--team-color']: driver.teams.team_color } : undefined}>
+        <div className="detail-tv__topbar">
+          <button type="button" className="detail-tv__back" onClick={onClose}>
+            ← Drivers
+          </button>
+          <div className="detail-tv__topTitle" title={title}>
+            {title}
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            {isAdmin && driver ? (
-              <button className="btn btn-blue btn-xs" onClick={() => onEdit?.(driver)}>Edit Driver</button>
-            ) : null}
-          </div>
+          {isAdmin && driver ? (
+            <button type="button" className="detail-tv__edit" onClick={() => onEdit?.(driver)}>
+              Edit Driver
+            </button>
+          ) : (
+            <div />
+          )}
         </div>
 
         {loading ? (
@@ -298,78 +262,100 @@ export default function DriverDetailPanel({ driverId, onClose, onEdit, mode = 'p
           <div style={{ padding: 16 }}><div className="error-msg">{error}</div></div>
         ) : driver ? (
           <div>
+            <div className="detail-tv__contentBar">
+              <button type="button" className="detail-tv__back" onClick={onClose}>
+                ← Back
+              </button>
+              {isAdmin ? (
+                <button type="button" className="detail-tv__edit" onClick={() => onEdit?.(driver)}>
+                  Edit Driver
+                </button>
+              ) : (
+                <div />
+              )}
+            </div>
             {/* Hero */}
-            <div style={{
-              padding: '18px 16px 16px',
-              borderBottom: '1px solid var(--line)',
-              background: 'linear-gradient(180deg, rgba(220,38,38,.12), rgba(0,0,0,0))',
-              position: 'relative',
-              overflow: 'hidden',
-            }}>
-              <div style={{
-                position: 'absolute',
-                right: 14,
-                top: 8,
-                fontFamily: 'var(--mono)',
-                fontSize: 92,
-                fontWeight: 700,
-                color: 'rgba(255,255,255,.06)',
-                letterSpacing: '-.06em',
-                pointerEvents: 'none',
-                userSelect: 'none',
-                lineHeight: 1,
-              }}>
-                {driver.number || ''}
+            <section className="driver-tv__hero">
+              <div className="driver-tv__heroBg" aria-hidden="true" />
+              <div className="driver-tv__heroNumber" aria-hidden="true">{driver.number || ''}</div>
+
+              {driver.image_url ? (
+                <img
+                  className="driver-tv__heroPhoto"
+                  src={driver.image_url}
+                  alt=""
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : null}
+
+              <div className="driver-tv__heroContent">
+                {driver.teams?.logo_url ? (
+                  <img
+                    className="driver-tv__heroTeamLogo"
+                    src={driver.teams.logo_url}
+                    alt={driver.teams?.name || ''}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                ) : null}
+
+                <div className="driver-tv__heroName">
+                  <div className="driver-tv__heroFirst">{driver.first_name || '—'}</div>
+                  <div className="driver-tv__heroLast">{driver.last_name || '—'}</div>
+                </div>
+
+                <div className="driver-tv__heroMeta">
+                  {driver.nationality ? <span>{driver.nationality}</span> : null}
+                  {age != null ? <span>{age} yrs</span> : null}
+                  <StatusBadge active={driver.active} />
+                </div>
               </div>
+            </section>
 
-              <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                <div style={{ flexShrink: 0 }}>
-                  <DriverPhoto src={driver.image_url} name={`${driver.first_name} ${driver.last_name}`} size={86} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                      {driver.teams?.logo_url ? <TeamLogo src={driver.teams.logo_url} name={driver.teams?.name} size={28} /> : null}
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontFamily: 'var(--sans)', fontSize: 22, fontWeight: 900, letterSpacing: '-.02em', lineHeight: 1.05, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {driver.first_name} {driver.last_name}
-                        </div>
-                        <div style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-                          <StatusBadge active={driver.active} />
-                          {driver.nationality ? <span className="badge badge-muted">{driver.nationality}</span> : null}
-                          {age != null ? <span className="badge badge-muted">{age} yrs</span> : null}
-                          {driver.teams?.name ? <span className="badge badge-blue">{driver.teams.name}</span> : null}
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      {driver.code ? (
-                        <span style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--sub)', letterSpacing: '.12em' }}>{driver.code}</span>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10 }}>
-                    <Stat label="Races" value={computed.races} />
-                    <Stat label="Wins" value={computed.wins} />
-                    <Stat label="Podiums" value={computed.podiums} />
-                    <Stat label="Points" value={Math.round((computed.points || 0) * 100) / 100} />
-                    <Stat label="Fastest Laps" value={computed.fastestLaps} />
-                    <Stat label="Best Finish" value={computed.bestFinish ?? '—'} />
-                  </div>
-                </div>
+            <div className="driver-tv__statsbar">
+              <div className="driver-tv__stat">
+                <div className="driver-tv__statValue">{computed.races}</div>
+                <div className="driver-tv__statLabel">Races</div>
+              </div>
+              <div className="driver-tv__statDiv" aria-hidden="true" />
+              <div className="driver-tv__stat">
+                <div className="driver-tv__statValue">{computed.wins}</div>
+                <div className="driver-tv__statLabel">Wins</div>
+              </div>
+              <div className="driver-tv__statDiv" aria-hidden="true" />
+              <div className="driver-tv__stat">
+                <div className="driver-tv__statValue">{computed.podiums}</div>
+                <div className="driver-tv__statLabel">Podiums</div>
+              </div>
+              <div className="driver-tv__statDiv" aria-hidden="true" />
+              <div className="driver-tv__stat">
+                <div className="driver-tv__statValue">{Math.round((computed.points || 0) * 100) / 100}</div>
+                <div className="driver-tv__statLabel">Points</div>
+              </div>
+              <div className="driver-tv__statDiv" aria-hidden="true" />
+              <div className="driver-tv__stat">
+                <div className="driver-tv__statValue">{computed.fastestLaps}</div>
+                <div className="driver-tv__statLabel">Fastest Laps</div>
+              </div>
+              <div className="driver-tv__statDiv" aria-hidden="true" />
+              <div className="driver-tv__stat">
+                <div className="driver-tv__statValue">{computed.bestFinish ?? '—'}</div>
+                <div className="driver-tv__statLabel">Best Finish</div>
               </div>
             </div>
 
             {/* Tabs */}
-            <div style={{ padding: '14px 16px', display: 'flex', gap: 8, flexWrap: 'wrap', borderBottom: '1px solid var(--line)' }}>
+            <div className="detail-tv__tabs">
               <TabButton id="history" active={tab === 'history'} onClick={setTab}>Race History</TabButton>
               <TabButton id="championships" active={tab === 'championships'} onClick={setTab}>Championships</TabButton>
               <TabButton id="bio" active={tab === 'bio'} onClick={setTab}>Bio</TabButton>
             </div>
 
             {/* Body */}
-            <div style={{ padding: '16px 16px 24px' }}>
+            <div className="detail-tv__body">
               {tab === 'history' ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {seasons.length ? (
@@ -379,7 +365,7 @@ export default function DriverDetailPanel({ driverId, onClose, onEdit, mode = 'p
                   )}
 
                   {seasonPills.length ? (
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    <div className="driver-tv__years">
                       <Pill active={!seasonFilter} onClick={() => setSeasonFilter(null)}>All</Pill>
                       {seasonPills.map(y => (
                         <Pill key={y} active={seasonFilter === y} onClick={() => setSeasonFilter(seasonFilter === y ? null : y)}>{y}</Pill>
@@ -387,40 +373,31 @@ export default function DriverDetailPanel({ driverId, onClose, onEdit, mode = 'p
                     </div>
                   ) : null}
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div className="detail-tv__rows">
                     {filteredResults.map(r => <ResultRow key={r.id} r={r} />)}
                   </div>
                 </div>
               ) : null}
 
               {tab === 'championships' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div className="detail-tv__rows">
                   {standings.length === 0 ? (
                     <div className="info-msg">No standings data found for this driver.</div>
-                  ) : standings.map(s => {
+                  ) : standings.map((s, idx) => {
                     const pct = Math.min(100, Math.round(((Number(s.points) || 0) / standingsMax) * 100));
+                    const isChampion = Number(s.position) === 1;
                     return (
-                      <div key={s.season_year} style={{
-                        padding: 12,
-                        border: '1px solid var(--line)',
-                        borderRadius: 10,
-                        background: 'rgba(255,255,255,.02)',
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--muted)' }}>{s.season_year}</div>
-                            <div style={{ fontWeight: 900 }}>P{s.position ?? '—'}</div>
-                            {s.teams?.logo_url ? <TeamLogo src={s.teams.logo_url} name={s.teams?.name} size={22} /> : null}
-                            <div style={{ fontSize: 12, color: 'var(--sub)' }}>{s.teams?.name || '—'}</div>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <span className="badge badge-yellow">{s.wins ?? 0} W</span>
-                            <span className="badge badge-muted">{s.points ?? 0} pts</span>
-                          </div>
+                      <div key={s.season_year} className={`detail-tv__row driver-tv__champRow ${idx === standings.length - 1 ? 'is-last' : ''}`}>
+                        <div className="driver-tv__champYear" style={{ color: isChampion ? 'var(--red)' : 'var(--text)' }}>
+                          {s.season_year ?? '—'}
                         </div>
-                        <div style={{ marginTop: 10, height: 8, background: 'rgba(255,255,255,.06)', borderRadius: 999, overflow: 'hidden' }}>
-                          <div style={{ width: `${pct}%`, height: '100%', background: 'var(--accent)', transition: 'width .35s ease' }} />
+                        <div className="driver-tv__champPos" style={{ color: isChampion ? 'var(--yellow)' : 'var(--sub)' }}>
+                          P{s.position ?? '—'}
                         </div>
+                        <div className="driver-tv__champBar">
+                          <div className="driver-tv__champFill" style={{ width: `${pct}%` }} />
+                        </div>
+                        <div className="driver-tv__champPts">{Number(s.points) || 0}</div>
                       </div>
                     );
                   })}
@@ -428,56 +405,49 @@ export default function DriverDetailPanel({ driverId, onClose, onEdit, mode = 'p
               ) : null}
 
               {tab === 'bio' ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 16, alignItems: 'start' }}>
-                  <div style={{ border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden', background: 'var(--bg3)' }}>
-                    <img
-                      src={driver.image_url || ''}
-                      alt=""
-                      style={{ width: '100%', height: 220, objectFit: 'cover', objectPosition: 'top' }}
-                      onError={e => { e.target.style.display = 'none'; }}
-                    />
-                    {!driver.image_url ? (
-                      <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--muted)' }}>
-                        NO PHOTO
-                      </div>
-                    ) : null}
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <div style={{ border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <tbody>
-                          {[
-                            ['Name', `${driver.first_name} ${driver.last_name}`],
-                            ['Code', driver.code || '—'],
-                            ['Number', driver.number || '—'],
-                            ['DOB', driver.dob || '—'],
-                            ['Age', age != null ? `${age}` : '—'],
-                            ['Nationality', driver.nationality || '—'],
-                            ['Team', driver.teams?.name || '—'],
-                            ['Past Teams', pastTeams.length ? pastTeams.map(t => t.name).join(', ') : '—'],
-                            ['Team Base', driver.teams?.base || '—'],
-                          ].map(([k, v]) => (
-                            <tr key={k}>
-                              <td style={{ padding: '10px 12px', fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', borderBottom: '1px solid var(--line)', width: 120 }}>{k}</td>
-                              <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--line)', fontSize: 12, color: 'var(--text)' }}>{v}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                <div className="detail-tv__stack">
+                  {driver.image_url ? (
+                    <div className="driver-tv__bioPhoto">
+                      <img
+                        src={driver.image_url}
+                        alt={title}
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
                     </div>
+                  ) : null}
 
-                    {driver.wiki_url ? (
-                      <a className="btn btn-ghost" href={driver.wiki_url} target="_blank" rel="noreferrer" style={{ width: 'fit-content' }}>
-                        Wikipedia
-                      </a>
-                    ) : null}
+                  <div className="detail-tv__kv">
+                    {[
+                      ['Name', `${driver.first_name} ${driver.last_name}`],
+                      ['Code', driver.code || '—'],
+                      ['Number', driver.number || '—'],
+                      ['DOB', driver.dob || '—'],
+                      ['Age', age != null ? `${age}` : '—'],
+                      ['Nationality', driver.nationality || '—'],
+                      ['Team', driver.teams?.name || '—'],
+                      ['Past Teams', pastTeams.length ? pastTeams.map((t) => t.name).join(', ') : '—'],
+                      ['Team Base', driver.teams?.base || '—'],
+                    ].map(([k, v], idx) => (
+                      <div key={k} className={`detail-tv__kvRow ${idx % 2 ? 'is-alt' : ''}`}>
+                        <div className="detail-tv__kvKey">{k}</div>
+                        <div className="detail-tv__kvVal">{v}</div>
+                      </div>
+                    ))}
                   </div>
+
+                  {driver.wiki_url ? (
+                    <a className="detail-tv__pill" href={driver.wiki_url} target="_blank" rel="noreferrer">
+                      ↗ Wikipedia
+                    </a>
+                  ) : null}
                 </div>
               ) : null}
             </div>
           </div>
         ) : null}
+        </div>
       </PanelTag>
     </Wrapper>
   );

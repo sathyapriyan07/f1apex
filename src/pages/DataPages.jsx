@@ -359,11 +359,105 @@ export function CircuitsPage({ detailId, onOpenCircuit, onCloseDetail } = {}) {
 
 function CircuitForm({ initial, onSave, onCancel, saving, error }) {
   const [f, setF] = useState({ name: '', locality: '', country: '', lat: '', lng: '', length_km: '', wiki_url: '', layout_url: '', ...initial });
+  const [wikiQuery, setWikiQuery] = useState('');
+  const [wikiPages, setWikiPages] = useState([]);
+  const [wikiImages, setWikiImages] = useState([]);
+  const [wikiLoading, setWikiLoading] = useState(false);
+  const [wikiError, setWikiError] = useState('');
+  const [selectedWikiTitle, setSelectedWikiTitle] = useState('');
   const set = k => e => setF(p => ({ ...p, [k]: e.target.value }));
   const submit = () => {
     const payload = { ...f };
     ['lat','lng','length_km'].forEach(k => { if (payload[k] === '') payload[k] = null; });
     onSave(payload);
+  };
+
+  const wikiSearch = async () => {
+    const q = (wikiQuery || f.name || '').trim();
+    if (!q) return;
+    setWikiError('');
+    setWikiLoading(true);
+    setWikiPages([]);
+    setWikiImages([]);
+    setSelectedWikiTitle('');
+    try {
+      const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&srlimit=8&format=json&origin=*`;
+      const res = await fetch(url);
+      const json = await res.json();
+      const pages = (json?.query?.search || []).map((p) => ({
+        title: p.title,
+        snippet: (p.snippet || '').replace(/<[^>]+>/g, ''),
+      }));
+      setWikiPages(pages);
+      if (!pages.length) setWikiError('No results found on Wikipedia.');
+    } catch (e) {
+      setWikiError('Wikipedia search failed.');
+    } finally {
+      setWikiLoading(false);
+    }
+  };
+
+  const wikiLoadImages = async (title) => {
+    if (!title) return;
+    setWikiError('');
+    setWikiLoading(true);
+    setWikiImages([]);
+    setSelectedWikiTitle(title);
+    try {
+      const pageUrl = `https://en.wikipedia.org/w/api.php?action=query&prop=images&titles=${encodeURIComponent(title)}&imlimit=50&format=json&origin=*`;
+      const pageRes = await fetch(pageUrl);
+      const pageJson = await pageRes.json();
+      const pages = pageJson?.query?.pages || {};
+      const page = Object.values(pages)[0] || {};
+      const images = page?.images || [];
+      const fileTitles = images
+        .map((img) => img.title)
+        .filter(Boolean)
+        .filter((t) => !/\\.(gif|webm|ogv)$/i.test(t))
+        .slice(0, 24);
+
+      if (!fileTitles.length) {
+        setWikiError('No images found on that page.');
+        return;
+      }
+
+      const filesUrl = `https://en.wikipedia.org/w/api.php?action=query&prop=imageinfo&titles=${encodeURIComponent(fileTitles.join('|'))}&iiprop=url&iiurlwidth=520&format=json&origin=*`;
+      const filesRes = await fetch(filesUrl);
+      const filesJson = await filesRes.json();
+      const filesPages = filesJson?.query?.pages || {};
+      const imgs = Object.values(filesPages)
+        .map((p) => {
+          const ii = p?.imageinfo?.[0];
+          if (!ii?.url) return null;
+          const fileName = (p?.title || '').replace(/^File:/, '');
+          const thumb = ii?.thumburl || ii?.url;
+          return { title: p?.title, fileName, url: ii.url, thumb };
+        })
+        .filter(Boolean);
+
+      const score = (x) => {
+        const n = (x.fileName || '').toLowerCase();
+        let s = 0;
+        if (n.includes('track')) s += 3;
+        if (n.includes('layout')) s += 3;
+        if (n.includes('circuit')) s += 2;
+        if (n.includes('map')) s += 2;
+        if (n.endsWith('.svg')) s += 2;
+        return s;
+      };
+
+      const ranked = imgs.sort((a, b) => score(b) - score(a));
+      setWikiImages(ranked.slice(0, 12));
+
+      setF((p) => ({
+        ...p,
+        wiki_url: p.wiki_url || `https://en.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g, '_'))}`,
+      }));
+    } catch (e) {
+      setWikiError('Failed to load images from Wikipedia.');
+    } finally {
+      setWikiLoading(false);
+    }
   };
   return (
     <div>
@@ -381,6 +475,63 @@ function CircuitForm({ initial, onSave, onCancel, saving, error }) {
         <div className="form-group"><label>Length (km)</label><input type="number" step="any" value={f.length_km || ''} onChange={set('length_km')} /></div>
         <div className="form-group full"><label>Circuit Layout Image URL</label><input value={f.layout_url || ''} onChange={set('layout_url')} placeholder="https://…/circuit.svg" /></div>
         <div className="form-group full"><label>Wikipedia URL</label><input value={f.wiki_url || ''} onChange={set('wiki_url')} /></div>
+        <div className="form-group full">
+          <label>Wikipedia image search</label>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <input
+              value={wikiQuery}
+              onChange={(e) => setWikiQuery(e.target.value)}
+              placeholder="Search Wikipedia (e.g. Silverstone Circuit)"
+              style={{ flex: 1, minWidth: 220 }}
+            />
+            <button type="button" className="btn btn-ghost" onClick={wikiSearch} disabled={wikiLoading}>
+              {wikiLoading ? <span className="spinner" /> : null} Search
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => wikiLoadImages(selectedWikiTitle || wikiPages?.[0]?.title)}
+              disabled={wikiLoading || (!selectedWikiTitle && !wikiPages?.length)}
+            >
+              Images
+            </button>
+          </div>
+
+          {wikiError ? <div className="error-msg" style={{ marginTop: 10 }}>{wikiError}</div> : null}
+
+          {wikiPages.length ? (
+            <div className="wiki-results">
+              {wikiPages.map((p) => (
+                <button
+                  key={p.title}
+                  type="button"
+                  className={`wiki-result ${selectedWikiTitle === p.title ? 'is-active' : ''}`}
+                  onClick={() => wikiLoadImages(p.title)}
+                >
+                  <div style={{ fontWeight: 800, fontSize: 13 }}>{p.title}</div>
+                  {p.snippet ? <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 4 }}>{p.snippet}</div> : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          {wikiImages.length ? (
+            <div className="wiki-images">
+              {wikiImages.map((img) => (
+                <button
+                  key={img.url}
+                  type="button"
+                  className="wiki-image"
+                  onClick={() => setF((p) => ({ ...p, layout_url: img.url }))}
+                  title="Use this image as the circuit layout URL"
+                >
+                  <img src={img.thumb} alt="" onError={(e) => (e.target.style.display = 'none')} />
+                  <div className="wiki-image__cap">{img.fileName}</div>
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </div>
       {error && <div className="error-msg" style={{ marginTop: 10 }}>{error}</div>}
       <div className="modal-actions">
@@ -403,7 +554,44 @@ export function RacesPage({ circuits, seasons }) {
       <SectionHead title="Races" count={C.rows.length} search={C.search} setSearch={C.setSearch} onAdd={isAdmin ? C.openAdd : null} />
       {C.error && <div className="error-msg" style={{ marginBottom: 14 }}>{C.error}</div>}
       {C.loading ? <Loader /> : C.rows.length === 0 ? <Empty icon="🏁" label="No races yet" /> : (
-        <div className="table-wrap">
+        <div className="table-wrap races-table-wrap">
+          <div className="races-cards" aria-label="Races list">
+            {C.rows.map((r) => {
+              const circuit = circuits.find((c) => c.id === r.circuit_id);
+              const circuitName = r.circuits?.name || circuit?.name || 'â€”';
+              const country = r.circuits?.country || circuit?.country || '';
+              return (
+                <div key={r.id} className="race-card">
+                  {circuit?.layout_url ? (
+                    <img
+                      src={circuit.layout_url}
+                      alt=""
+                      className="race-card__thumb"
+                      onError={(e) => (e.target.style.display = 'none')}
+                    />
+                  ) : null}
+                  <div className="race-card__content">
+                    <div className="race-card__name">{r.name}</div>
+                    <div className="race-card__meta">
+                      <span>{r.season_year} · R{r.round}</span>
+                      <span>·</span>
+                      <span>{r.date || 'â€”'}</span>
+                      {r.sprint ? <span className="badge badge-yellow">Sprint</span> : null}
+                    </div>
+                    <div className="race-card__sub">
+                      {circuitName}{country ? ` · ${country}` : ''}
+                    </div>
+                  </div>
+                  {isAdmin ? (
+                    <div className="race-card__actions">
+                      <RowActions onEdit={() => C.openEdit(r)} onDelete={() => C.remove(r.id)} />
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+
           <table className="races-table">
             <thead><tr><th>Season</th><th>Rnd</th><th>Race</th><th>Circuit</th><th>Country</th><th>Date</th><th>Sprint</th>{isAdmin && <th></th>}</tr></thead>
             <tbody>
