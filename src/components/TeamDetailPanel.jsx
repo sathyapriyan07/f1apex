@@ -124,7 +124,7 @@ function DriverRow({ d }) {
   );
 }
 
-export default function TeamDetailPanel({ teamId, onClose, onEdit }) {
+export default function TeamDetailPanel({ teamId, onClose, onEdit, mode = 'panel' }) {
   const { isAdmin } = useAuth();
   const [tab, setTab] = useState('history');
   const [team, setTeam] = useState(null);
@@ -138,9 +138,9 @@ export default function TeamDetailPanel({ teamId, onClose, onEdit }) {
     function onKey(e) { if (e.key === 'Escape') onClose?.(); }
     document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [onClose]);
+    if (mode === 'panel') document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', onKey); if (mode === 'panel') document.body.style.overflow = prev; };
+  }, [onClose, mode]);
 
   useEffect(() => {
     let alive = true;
@@ -178,9 +178,18 @@ export default function TeamDetailPanel({ teamId, onClose, onEdit }) {
 
   const title = team?.name || 'Team';
 
+  const Wrapper = mode === 'panel' ? 'div' : 'div';
+  const PanelTag = mode === 'panel' ? 'aside' : 'div';
+  const wrapperProps = mode === 'panel'
+    ? { className: 'slidein-backdrop', onMouseDown: onClose, 'aria-label': 'Close team panel' }
+    : {};
+  const panelProps = mode === 'panel'
+    ? { className: 'slidein-panel', role: 'dialog', 'aria-modal': 'true', 'aria-label': title, onMouseDown: (e) => e.stopPropagation() }
+    : { className: 'card', style: { width: '100%', overflow: 'hidden' } };
+
   return (
-    <div className="slidein-backdrop" onMouseDown={onClose} aria-label="Close team panel">
-      <aside className="slidein-panel" role="dialog" aria-modal="true" aria-label={title} onMouseDown={e => e.stopPropagation()}>
+    <Wrapper {...wrapperProps}>
+      <PanelTag {...panelProps}>
         <div style={{
           position: 'sticky', top: 0, zIndex: 5,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -228,7 +237,7 @@ export default function TeamDetailPanel({ teamId, onClose, onEdit }) {
                 }}>
                   {team.logo_url ? (
                     <img src={team.logo_url} alt={team.name}
-                      style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
+                      style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain' }}
                       onError={e => { e.target.style.display = 'none'; }} />
                   ) : (
                     <span style={{ fontFamily: 'var(--mono)', fontSize: 18, fontWeight: 500, color: 'var(--line2)' }}>
@@ -324,7 +333,7 @@ export default function TeamDetailPanel({ teamId, onClose, onEdit }) {
                   {team.logo_url ? (
                     <div style={{ border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden', background: 'var(--bg3)', padding: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <img src={team.logo_url} alt={team.name}
-                        style={{ maxWidth: 160, maxHeight: 100, objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: .8 }}
+                        style={{ maxWidth: 160, maxHeight: 100, objectFit: 'contain', opacity: .95 }}
                         onError={e => { e.target.style.display = 'none'; }} />
                     </div>
                   ) : null}
@@ -339,7 +348,7 @@ export default function TeamDetailPanel({ teamId, onClose, onEdit }) {
             </div>
           </div>
         ) : null}
-      </aside>
-    </div>
+      </PanelTag>
+    </Wrapper>
   );
 }

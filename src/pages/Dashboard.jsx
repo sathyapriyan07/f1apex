@@ -58,8 +58,8 @@ export default function Dashboard({ setTab }) {
         const dsRows = ds.error ? [] : (ds.data || []);
         const csRows = cs.error ? [] : (cs.data || []);
 
-        // If standings tables are empty but results exist, compute & upsert (admin) then reload.
-        if (isAdmin && dsRows.length === 0 && csRows.length === 0) {
+        // If standings tables are empty but results exist, compute from results for display.
+        if (dsRows.length === 0 && csRows.length === 0) {
           const { data: rr, error: rrError } = await db.race_results.listBySeason(latestYear);
           if (!alive) return;
           if (!rrError && (rr || []).length) {
@@ -67,35 +67,44 @@ export default function Dashboard({ setTab }) {
             const teamTotals = {};
             for (const res of rr || []) {
               if (res.driver_id) {
-                if (!driverTotals[res.driver_id]) driverTotals[res.driver_id] = { driver_id: res.driver_id, team_id: res.team_id, points: 0, wins: 0 };
+                if (!driverTotals[res.driver_id]) {
+                  driverTotals[res.driver_id] = { driver_id: res.driver_id, team_id: res.team_id, points: 0, wins: 0, drivers: res.drivers || null, teams: res.teams || null };
+                }
                 driverTotals[res.driver_id].points += Number(res.points || 0);
                 if (res.position === 1) driverTotals[res.driver_id].wins += 1;
-                if (res.team_id) driverTotals[res.driver_id].team_id = res.team_id;
+                if (res.team_id) {
+                  driverTotals[res.driver_id].team_id = res.team_id;
+                  if (res.teams) driverTotals[res.driver_id].teams = res.teams;
+                }
+                if (res.drivers) driverTotals[res.driver_id].drivers = res.drivers;
               }
               if (res.team_id) {
-                if (!teamTotals[res.team_id]) teamTotals[res.team_id] = { team_id: res.team_id, points: 0, wins: 0 };
+                if (!teamTotals[res.team_id]) teamTotals[res.team_id] = { team_id: res.team_id, points: 0, wins: 0, teams: res.teams || null };
                 teamTotals[res.team_id].points += Number(res.points || 0);
                 if (res.position === 1) teamTotals[res.team_id].wins += 1;
+                if (res.teams) teamTotals[res.team_id].teams = res.teams;
               }
             }
 
             const driversSorted = Object.values(driverTotals).sort((a, b) => b.points - a.points || b.wins - a.wins);
             const teamsSorted = Object.values(teamTotals).sort((a, b) => b.points - a.points || b.wins - a.wins);
 
-            const upsertDrivers = driversSorted.map((row, i) => ({ ...row, season_year: Number(latestYear), position: i + 1 }));
-            const upsertTeams = teamsSorted.map((row, i) => ({ ...row, season_year: Number(latestYear), position: i + 1 }));
+            const computedDriverRows = driversSorted.map((row, i) => ({ ...row, season_year: Number(latestYear), position: i + 1, id: `${latestYear}-d-${row.driver_id}` }));
+            const computedTeamRows = teamsSorted.map((row, i) => ({ ...row, season_year: Number(latestYear), position: i + 1, id: `${latestYear}-t-${row.team_id}` }));
 
-            // Best-effort: ignore errors (RLS might block some environments)
-            if (upsertDrivers.length) await db.driver_standings.upsert(upsertDrivers);
-            if (upsertTeams.length) await db.constructor_standings.upsert(upsertTeams);
+            setDriverTop(computedDriverRows.slice(0, 5));
+            setConstructorTop(computedTeamRows.slice(0, 5));
 
-            // Reload standings after compute
-            // eslint-disable-next-line no-unused-vars
-            [ds, cs] = await Promise.all([
-              db.driver_standings.listBySeason(latestYear),
-              db.constructor_standings.listBySeason(latestYear),
-            ]);
-            if (!alive) return;
+            // Admin: best-effort upsert so the Standings pages can use the stored tables.
+            if (isAdmin) {
+              const upsertDrivers = driversSorted.map((row, i) => ({ driver_id: row.driver_id, team_id: row.team_id, points: row.points, wins: row.wins, season_year: Number(latestYear), position: i + 1 }));
+              const upsertTeams = teamsSorted.map((row, i) => ({ team_id: row.team_id, points: row.points, wins: row.wins, season_year: Number(latestYear), position: i + 1 }));
+              await db.driver_standings.upsert(upsertDrivers);
+              await db.constructor_standings.upsert(upsertTeams);
+            }
+
+            setLoading(false);
+            return;
           }
         }
 

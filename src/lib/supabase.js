@@ -80,7 +80,7 @@ export const db = {
         .order('position', { nullsFirst: false }),
     listBySeason: (year) =>
       supabase.from('race_results')
-        .select('driver_id, team_id, points, position, races!inner(season_year)')
+        .select('driver_id, team_id, points, position, drivers(id, first_name, last_name, code, image_url), teams(id, name, logo_url, team_color), races!inner(season_year)')
         .eq('races.season_year', year),
     insert: (row)         => supabase.from('race_results').insert(row).select('*, drivers(id,first_name,last_name,code,number,image_url), teams(id,name,logo_url,team_color)').single(),
     update: (id, row)     => supabase.from('race_results').update(row).eq('id', id).select('*, drivers(id,first_name,last_name,code,number,image_url), teams(id,name,logo_url,team_color)').single(),

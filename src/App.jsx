@@ -50,6 +50,7 @@ function Inner() {
 function AppShell({ onOpenAuth }) {
   const { isAdmin } = useAuth();
   const [tab, setTab] = useState('dashboard');
+  const [detail, setDetail] = useState(null); // { type: 'driver'|'team'|'circuit', id }
   const [autoImport, setAutoImport] = useState(null);
 
   // Shared reference data loaded once
@@ -97,15 +98,41 @@ function AppShell({ onOpenAuth }) {
     setAutoImport({ season, source });
   }, [isAdmin]);
 
+  const openDriver = (id) => { setDetail({ type: 'driver', id }); setTab('drivers'); };
+  const openTeam = (id) => { setDetail({ type: 'team', id }); setTab('teams'); };
+  const openCircuit = (id) => { setDetail({ type: 'circuit', id }); setTab('circuits'); };
+  const closeDetail = () => setDetail(null);
+
+  const setTabWithClose = (nextTab) => { setDetail(null); setTab(nextTab); };
+
   const renderTab = () => {
     switch (tab) {
-      case 'dashboard':    return <Dashboard setTab={setTab} />;
-      case 'drivers':      return <DriversPage teams={teams} />;
-      case 'teams':        return <TeamsPage />;
+      case 'dashboard':    return <Dashboard setTab={setTabWithClose} />;
+      case 'drivers':      return (
+        <DriversPage
+          teams={teams}
+          detailId={detail?.type === 'driver' ? detail.id : null}
+          onOpenDriver={openDriver}
+          onCloseDetail={closeDetail}
+        />
+      );
+      case 'teams':        return (
+        <TeamsPage
+          detailId={detail?.type === 'team' ? detail.id : null}
+          onOpenTeam={openTeam}
+          onCloseDetail={closeDetail}
+        />
+      );
       case 'seasons':      return <SeasonsPage />;
-      case 'circuits':     return <CircuitsPage />;
+      case 'circuits':     return (
+        <CircuitsPage
+          detailId={detail?.type === 'circuit' ? detail.id : null}
+          onOpenCircuit={openCircuit}
+          onCloseDetail={closeDetail}
+        />
+      );
       case 'races':        return <RacesPage circuits={circuits} seasons={seasons} />;
-      case 'results':      return <RaceResultsPage races={races} drivers={drivers} teams={teams} />;
+      case 'results':      return <RaceResultsPage races={races} drivers={drivers} teams={teams} onOpenDriver={openDriver} />;
       case 'standings':    return <StandingsHub seasons={seasons} />;
       case 'constructors': return <ConstructorStandingsPage seasons={seasons} />;
       case 'laptimes':     return <LapTimesPage races={races} drivers={drivers} />;
@@ -124,7 +151,7 @@ function AppShell({ onOpenAuth }) {
   };
 
   return (
-    <Layout tab={tab} setTab={setTab} onSignIn={onOpenAuth}>
+    <Layout tab={tab} setTab={setTabWithClose} onSignIn={onOpenAuth}>
       {renderTab()}
     </Layout>
   );

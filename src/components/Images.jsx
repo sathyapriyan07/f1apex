@@ -70,7 +70,7 @@ export function TeamLogo({ src, name = '', size = 32 }) {
       alt={name}
       className="img-logo"
       style={{ width: size, height: size, flexShrink: 0 }}
-      imgStyle={{ objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
+      imgStyle={{ objectFit: 'contain' }}
       fallback={
         <span style={{ fontSize: Math.max(8, size * 0.3), fontWeight: 800, color: 'var(--muted)', fontFamily: 'var(--sans)', letterSpacing: '.06em' }}>
           {abbr || '—'}
@@ -235,4 +235,3 @@ export function Stat({ label, val, accent }) {
     </div>
   );
 }
-

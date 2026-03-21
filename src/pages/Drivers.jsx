@@ -7,11 +7,29 @@ import Modal from '../components/Modal';
 import { DriverCard } from '../components/Images';
 import DriverDetailPanel from '../components/DriverDetailPanel';
 
-export default function DriversPage({ teams }) {
+export default function DriversPage({ teams, detailId, onOpenDriver, onCloseDetail }) {
   const { isAdmin } = useAuth();
   const C = useCRUD(db.drivers);
   const [view, setView] = useState('grid'); // 'grid' | 'list'
-  const [detailId, setDetailId] = useState(null);
+
+  if (detailId) {
+    return (
+      <div>
+        <DriverDetailPanel
+          driverId={detailId}
+          mode="page"
+          onClose={onCloseDetail}
+          onEdit={(driver) => C.openEdit(driver)}
+        />
+
+        {C.modal && (
+          <Modal title={C.modal.mode === 'add' ? 'Add Driver' : 'Edit Driver'} onClose={() => C.setModal(null)}>
+            <DriverForm initial={C.modal.data} teams={teams} onSave={C.save} onCancel={() => C.setModal(null)} saving={C.saving} error={C.error} />
+          </Modal>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -34,7 +52,7 @@ export default function DriversPage({ teams }) {
                 teamLogoUrl={teams.find(t => t.id === d.team_id)?.logo_url}
                 teamColor={teams.find(t => t.id === d.team_id)?.team_color}
                 isAdmin={isAdmin}
-                onClick={() => setDetailId(d.id)}
+                onClick={() => onOpenDriver?.(d.id)}
                 onEdit={() => C.openEdit(d)}
                 onDelete={() => C.remove(d.id)}
               />
@@ -48,7 +66,7 @@ export default function DriversPage({ teams }) {
               </thead>
               <tbody>
                 {C.rows.map(d => (
-                  <tr key={d.id} onClick={() => setDetailId(d.id)} style={{ cursor: 'pointer' }}>
+                  <tr key={d.id} onClick={() => onOpenDriver?.(d.id)} style={{ cursor: 'pointer' }}>
                     <td style={{ width: 44 }}>
                       <div style={{ width: 36, height: 36, borderRadius: 3, overflow: 'hidden', background: 'var(--bg3)', flexShrink: 0 }}>
                         {d.image_url
@@ -64,7 +82,7 @@ export default function DriversPage({ teams }) {
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {teams.find(t => t.id === d.team_id)?.logo_url && (
-                          <img src={teams.find(t => t.id === d.team_id).logo_url} alt="" style={{ width: 20, height: 20, objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: .6 }} onError={e => e.target.style.display='none'} />
+                          <img src={teams.find(t => t.id === d.team_id).logo_url} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} onError={e => e.target.style.display='none'} />
                         )}
                         <span style={{ fontSize: 12 }}>{d.teams?.name || '—'}</span>
                       </div>
@@ -77,14 +95,6 @@ export default function DriversPage({ teams }) {
             </table>
           </div>
         )
-      )}
-
-      {detailId && (
-        <DriverDetailPanel
-          driverId={detailId}
-          onClose={() => setDetailId(null)}
-          onEdit={(driver) => C.openEdit(driver)}
-        />
       )}
 
       {C.modal && (

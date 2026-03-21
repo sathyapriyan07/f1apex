@@ -37,8 +37,42 @@ export function DriverStandingsPage({ seasons }) {
     setLoading(true);
     setError('');
     const { data, error: e } = await db.driver_standings.listBySeason(y);
-    if (e) setError(e.message);
-    else setRows(data || []);
+    if (e) {
+      setError(e.message);
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+
+    const list = data || [];
+    if (list.length) {
+      setRows(list);
+      setLoading(false);
+      return;
+    }
+
+    // Fallback (guest-friendly): compute from race_results when stored standings aren't available.
+    const { data: rr, error: rrError } = await db.race_results.listBySeason(y);
+    if (rrError) {
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+
+    const totals = {};
+    for (const res of rr || []) {
+      if (!res.driver_id) continue;
+      if (!totals[res.driver_id]) totals[res.driver_id] = { driver_id: res.driver_id, team_id: res.team_id, points: 0, wins: 0, drivers: res.drivers || null, teams: res.teams || null };
+      totals[res.driver_id].points += Number(res.points || 0);
+      if (res.position === 1) totals[res.driver_id].wins += 1;
+      if (res.team_id) {
+        totals[res.driver_id].team_id = res.team_id;
+        if (res.teams) totals[res.driver_id].teams = res.teams;
+      }
+      if (res.drivers) totals[res.driver_id].drivers = res.drivers;
+    }
+    const sorted = Object.values(totals).sort((a, b) => b.points - a.points || b.wins - a.wins);
+    setRows(sorted.map((r, i) => ({ ...r, id: `${y}-d-${r.driver_id}`, season_year: Number(y), position: i + 1 })));
     setLoading(false);
   };
 
@@ -193,8 +227,38 @@ export function ConstructorStandingsPage({ seasons }) {
     setLoading(true);
     setError('');
     const { data, error: e } = await db.constructor_standings.listBySeason(y);
-    if (e) setError(e.message);
-    else setRows(data || []);
+    if (e) {
+      setError(e.message);
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+
+    const list = data || [];
+    if (list.length) {
+      setRows(list);
+      setLoading(false);
+      return;
+    }
+
+    // Fallback (guest-friendly): compute from race_results when stored standings aren't available.
+    const { data: rr, error: rrError } = await db.race_results.listBySeason(y);
+    if (rrError) {
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+
+    const totals = {};
+    for (const res of rr || []) {
+      if (!res.team_id) continue;
+      if (!totals[res.team_id]) totals[res.team_id] = { team_id: res.team_id, points: 0, wins: 0, teams: res.teams || null };
+      totals[res.team_id].points += Number(res.points || 0);
+      if (res.position === 1) totals[res.team_id].wins += 1;
+      if (res.teams) totals[res.team_id].teams = res.teams;
+    }
+    const sorted = Object.values(totals).sort((a, b) => b.points - a.points || b.wins - a.wins);
+    setRows(sorted.map((r, i) => ({ ...r, id: `${y}-t-${r.team_id}`, season_year: Number(y), position: i + 1 })));
     setLoading(false);
   };
 
@@ -322,4 +386,3 @@ export function ConstructorStandingsPage({ seasons }) {
     </div>
   );
 }
-

@@ -371,8 +371,7 @@ label {
   width: 26px;
   height: 26px;
   object-fit: contain;
-  filter: brightness(0) invert(1);
-  opacity: .75;
+  opacity: .95;
 }
 .driver-card__actions {
   position: absolute;
@@ -402,7 +401,7 @@ label {
   background: var(--card2);
   padding: 18px;
 }
-.team-card__logo img { max-width: 100%; max-height: 70px; object-fit: contain; filter: brightness(0) invert(1); opacity: .95; }
+.team-card__logo img { max-width: 100%; max-height: 70px; object-fit: contain; opacity: .98; }
 .team-card__body { padding: 12px 14px 14px; }
 .team-card__name { font-weight: 900; font-size: 18px; letter-spacing: -.02em; margin-bottom: 8px; }
 .team-card__sub { color: var(--muted); font-size: 12px; }
@@ -499,7 +498,6 @@ tr:hover td { background: rgba(255,255,255,.05); }
 }
 .img-logo {
   object-fit: contain; background: transparent;
-  filter: brightness(0) invert(1);
   flex-shrink: 0;
 }
 .img-driver {

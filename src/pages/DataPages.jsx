@@ -12,11 +12,29 @@ import TeamDetailPanel from '../components/TeamDetailPanel';
 // ══════════════════════════════════════════
 // TEAMS
 // ══════════════════════════════════════════
-export function TeamsPage() {
+export function TeamsPage({ detailId, onOpenTeam, onCloseDetail } = {}) {
   const { isAdmin } = useAuth();
   const C = useCRUD(db.teams);
   const [view, setView] = useState('grid');
-  const [detailId, setDetailId] = useState(null);
+
+  if (detailId) {
+    return (
+      <div>
+        <TeamDetailPanel
+          teamId={detailId}
+          mode="page"
+          onClose={onCloseDetail}
+          onEdit={(team) => C.openEdit(team)}
+        />
+
+        {C.modal && (
+          <Modal title={C.modal.mode === 'add' ? 'Add Team' : 'Edit Team'} onClose={() => C.setModal(null)}>
+            <TeamForm initial={C.modal.data} onSave={C.save} onCancel={() => C.setModal(null)} saving={C.saving} error={C.error} />
+          </Modal>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -30,7 +48,7 @@ export function TeamsPage() {
         view === 'grid' ? (
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
             {C.rows.map(t => (
-              <TeamCard key={t.id} team={t} isAdmin={isAdmin} onClick={() => setDetailId(t.id)} onEdit={() => C.openEdit(t)} onDelete={() => C.remove(t.id)} />
+              <TeamCard key={t.id} team={t} isAdmin={isAdmin} onClick={() => onOpenTeam?.(t.id)} onEdit={() => C.openEdit(t)} onDelete={() => C.remove(t.id)} />
             ))}
           </div>
         ) : (
@@ -39,11 +57,11 @@ export function TeamsPage() {
               <thead><tr><th>Logo</th><th>Name</th><th>Nationality</th><th>Base</th><th>WCC</th><th>Founded</th>{isAdmin && <th></th>}</tr></thead>
               <tbody>
                 {C.rows.map(t => (
-                  <tr key={t.id} onClick={() => setDetailId(t.id)} style={{ cursor: 'pointer' }}>
+                  <tr key={t.id} onClick={() => onOpenTeam?.(t.id)} style={{ cursor: 'pointer' }}>
                     <td style={{ width: 44 }}>
                       <div style={{ width: 36, height: 24, display: 'flex', alignItems: 'center' }}>
                         {t.logo_url
-                          ? <img src={t.logo_url} alt="" style={{ maxWidth: 36, maxHeight: 24, objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: .7 }} onError={e => e.target.style.display='none'} />
+                          ? <img src={t.logo_url} alt="" style={{ maxWidth: 36, maxHeight: 24, objectFit: 'contain' }} onError={e => e.target.style.display='none'} />
                           : <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--muted)' }}>{t.name?.slice(0,4)}</span>
                         }
                       </div>
@@ -66,13 +84,6 @@ export function TeamsPage() {
         <Modal title={C.modal.mode === 'add' ? 'Add Team' : 'Edit Team'} onClose={() => C.setModal(null)}>
           <TeamForm initial={C.modal.data} onSave={C.save} onCancel={() => C.setModal(null)} saving={C.saving} error={C.error} />
         </Modal>
-      )}
-      {detailId && (
-        <TeamDetailPanel
-          teamId={detailId}
-          onClose={() => setDetailId(null)}
-          onEdit={(team) => C.openEdit(team)}
-        />
       )}
     </div>
   );
@@ -152,7 +163,7 @@ function TeamForm({ initial, onSave, onCancel, saving, error }) {
     <div>
       {f.logo_url && (
         <div style={{ marginBottom: 14, height: 48, background: 'var(--bg3)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 8 }}>
-          <img src={f.logo_url} alt="preview" style={{ maxHeight: '100%', maxWidth: 140, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} onError={e => e.target.style.display='none'} />
+          <img src={f.logo_url} alt="preview" style={{ maxHeight: '100%', maxWidth: 140, objectFit: 'contain' }} onError={e => e.target.style.display='none'} />
         </div>
       )}
       <div className="form-grid">
@@ -272,11 +283,29 @@ function SeasonForm({ initial, onSave, onCancel, saving, error }) {
 // ══════════════════════════════════════════
 // CIRCUITS
 // ══════════════════════════════════════════
-export function CircuitsPage() {
+export function CircuitsPage({ detailId, onOpenCircuit, onCloseDetail } = {}) {
   const { isAdmin } = useAuth();
   const C = useCRUD(db.circuits);
   const [view, setView] = useState('grid');
-  const [detailId, setDetailId] = useState(null);
+
+  if (detailId) {
+    return (
+      <div>
+        <CircuitDetailPanel
+          circuitId={detailId}
+          mode="page"
+          onClose={onCloseDetail}
+          onEdit={(circuit) => C.openEdit(circuit)}
+        />
+
+        {C.modal && (
+          <Modal title={C.modal.mode === 'add' ? 'Add Circuit' : 'Edit Circuit'} onClose={() => C.setModal(null)}>
+            <CircuitForm initial={C.modal.data} onSave={C.save} onCancel={() => C.setModal(null)} saving={C.saving} error={C.error} />
+          </Modal>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -289,7 +318,7 @@ export function CircuitsPage() {
         view === 'grid' ? (
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
             {C.rows.map(c => (
-              <CircuitCard key={c.id} circuit={c} isAdmin={isAdmin} onClick={() => setDetailId(c.id)} onEdit={() => C.openEdit(c)} onDelete={() => C.remove(c.id)} />
+              <CircuitCard key={c.id} circuit={c} isAdmin={isAdmin} onClick={() => onOpenCircuit?.(c.id)} onEdit={() => C.openEdit(c)} onDelete={() => C.remove(c.id)} />
             ))}
           </div>
         ) : (
@@ -298,7 +327,7 @@ export function CircuitsPage() {
               <thead><tr><th>Layout</th><th>Name</th><th>City</th><th>Country</th><th>Length</th>{isAdmin && <th></th>}</tr></thead>
               <tbody>
                 {C.rows.map(c => (
-                  <tr key={c.id} onClick={() => setDetailId(c.id)} style={{ cursor: 'pointer' }}>
+                  <tr key={c.id} onClick={() => onOpenCircuit?.(c.id)} style={{ cursor: 'pointer' }}>
                     <td style={{ width: 60 }}>
                       <div style={{ width: 56, height: 36, background: 'var(--bg3)', borderRadius: 3, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {c.layout_url
@@ -323,13 +352,6 @@ export function CircuitsPage() {
         <Modal title={C.modal.mode === 'add' ? 'Add Circuit' : 'Edit Circuit'} onClose={() => C.setModal(null)}>
           <CircuitForm initial={C.modal.data} onSave={C.save} onCancel={() => C.setModal(null)} saving={C.saving} error={C.error} />
         </Modal>
-      )}
-      {detailId && (
-        <CircuitDetailPanel
-          circuitId={detailId}
-          onClose={() => setDetailId(null)}
-          onEdit={(circuit) => C.openEdit(circuit)}
-        />
       )}
     </div>
   );

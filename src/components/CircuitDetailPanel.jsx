@@ -141,7 +141,7 @@ function DriverAppearancesRow({ record, index }) {
   );
 }
 
-export default function CircuitDetailPanel({ circuitId, onClose, onEdit }) {
+export default function CircuitDetailPanel({ circuitId, onClose, onEdit, mode = 'panel' }) {
   const { isAdmin } = useAuth();
   const [tab, setTab] = useState('history');
   const [circuit, setCircuit] = useState(null);
@@ -157,9 +157,9 @@ export default function CircuitDetailPanel({ circuitId, onClose, onEdit }) {
     function onKey(e) { if (e.key === 'Escape') onClose?.(); }
     document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [onClose]);
+    if (mode === 'panel') document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', onKey); if (mode === 'panel') document.body.style.overflow = prev; };
+  }, [onClose, mode]);
 
   useEffect(() => {
     let alive = true;
@@ -232,9 +232,18 @@ export default function CircuitDetailPanel({ circuitId, onClose, onEdit }) {
 
   const title = circuit?.name || 'Circuit';
 
+  const Wrapper = mode === 'panel' ? 'div' : 'div';
+  const PanelTag = mode === 'panel' ? 'aside' : 'div';
+  const wrapperProps = mode === 'panel'
+    ? { className: 'slidein-backdrop', onMouseDown: onClose, 'aria-label': 'Close circuit panel' }
+    : {};
+  const panelProps = mode === 'panel'
+    ? { className: 'slidein-panel', role: 'dialog', 'aria-modal': 'true', 'aria-label': title, onMouseDown: (e) => e.stopPropagation() }
+    : { className: 'card', style: { width: '100%', overflow: 'hidden' } };
+
   return (
-    <div className="slidein-backdrop" onMouseDown={onClose} aria-label="Close circuit panel">
-      <aside className="slidein-panel" role="dialog" aria-modal="true" aria-label={title} onMouseDown={e => e.stopPropagation()}>
+    <Wrapper {...wrapperProps}>
+      <PanelTag {...panelProps}>
         <div style={{
           position: 'sticky', top: 0, zIndex: 5,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -439,7 +448,7 @@ export default function CircuitDetailPanel({ circuitId, onClose, onEdit }) {
             </div>
           </div>
         ) : null}
-      </aside>
-    </div>
+      </PanelTag>
+    </Wrapper>
   );
 }

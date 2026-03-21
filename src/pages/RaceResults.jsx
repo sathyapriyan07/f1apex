@@ -5,12 +5,11 @@ import { useAuth } from '../hooks/useAuth';
 import Modal from '../components/Modal';
 import { Loader, Empty } from './Drivers';
 import { DriverPhoto, TeamLogo } from '../components/Images';
-import DriverDetailPanel from '../components/DriverDetailPanel';
 
 const POSITION_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 const STATUS_OPTIONS = ['Finished', '+1 Lap', '+2 Laps', 'DNF', 'DNS', 'DSQ', 'Accident', 'Engine', 'Gearbox', 'Hydraulics', 'Brakes', 'Electrical', 'Retired'];
 
-export default function RaceResultsPage({ races, drivers, teams }) {
+export default function RaceResultsPage({ races, drivers, teams, onOpenDriver }) {
   const { isAdmin } = useAuth();
   const [selectedRaceId, setSelectedRaceId] = useState('');
   const [results, setResults] = useState([]);
@@ -18,7 +17,6 @@ export default function RaceResultsPage({ races, drivers, teams }) {
   const [modal, setModal] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [detailId, setDetailId] = useState(null);
 
   // Sort races newest first
   const sortedRaces = [...races].sort((a, b) => b.season_year - a.season_year || a.round - b.round);
@@ -128,8 +126,8 @@ export default function RaceResultsPage({ races, drivers, teams }) {
                       </td>
                       <td>
                         <div
-                          style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
-                          onClick={() => r.drivers?.id && setDetailId(r.drivers.id)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: r.drivers?.id ? 'pointer' : 'default' }}
+                          onClick={() => r.drivers?.id && onOpenDriver?.(r.drivers.id)}
                         >
                           <DriverPhoto src={r.drivers?.image_url} name={`${r.drivers?.first_name} ${r.drivers?.last_name}`} size={28} />
                           <b>{r.drivers?.first_name} {r.drivers?.last_name}</b>
@@ -182,12 +180,6 @@ export default function RaceResultsPage({ races, drivers, teams }) {
             saving={saving} error={error}
           />
         </Modal>
-      )}
-      {detailId && (
-        <DriverDetailPanel
-          driverId={detailId}
-          onClose={() => setDetailId(null)}
-        />
       )}
     </div>
   );

@@ -169,7 +169,7 @@ function ResultRow({ r }) {
   );
 }
 
-export default function DriverDetailPanel({ driverId, onClose, onEdit }) {
+export default function DriverDetailPanel({ driverId, onClose, onEdit, mode = 'panel' }) {
   const { isAdmin } = useAuth();
   const [tab, setTab] = useState('history'); // history | championships | bio
   const [driver, setDriver] = useState(null);
@@ -184,9 +184,12 @@ export default function DriverDetailPanel({ driverId, onClose, onEdit }) {
     function onKey(e) { if (e.key === 'Escape') onClose?.(); }
     document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [onClose]);
+    if (mode === 'panel') document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      if (mode === 'panel') document.body.style.overflow = prev;
+    };
+  }, [onClose, mode]);
 
   useEffect(() => {
     let alive = true;
@@ -258,9 +261,18 @@ export default function DriverDetailPanel({ driverId, onClose, onEdit }) {
 
   const title = driver ? `${driver.first_name} ${driver.last_name}` : 'Driver';
 
+  const Wrapper = mode === 'panel' ? 'div' : 'div';
+  const PanelTag = mode === 'panel' ? 'aside' : 'div';
+  const wrapperProps = mode === 'panel'
+    ? { className: 'slidein-backdrop', onMouseDown: onClose, 'aria-label': 'Close driver panel' }
+    : {};
+  const panelProps = mode === 'panel'
+    ? { className: 'slidein-panel', role: 'dialog', 'aria-modal': 'true', 'aria-label': title, onMouseDown: (e) => e.stopPropagation() }
+    : { className: 'card', style: { width: '100%', overflow: 'hidden' } };
+
   return (
-    <div className="slidein-backdrop" onMouseDown={onClose} aria-label="Close driver panel">
-      <aside className="slidein-panel" role="dialog" aria-modal="true" aria-label={title} onMouseDown={e => e.stopPropagation()}>
+    <Wrapper {...wrapperProps}>
+      <PanelTag {...panelProps}>
         {/* Header */}
         <div style={{
           position: 'sticky', top: 0, zIndex: 5,
@@ -466,7 +478,7 @@ export default function DriverDetailPanel({ driverId, onClose, onEdit }) {
             </div>
           </div>
         ) : null}
-      </aside>
-    </div>
+      </PanelTag>
+    </Wrapper>
   );
 }
