@@ -31,7 +31,7 @@ export default function AuthPage({ onClose }) {
   };
 
   const inner = (
-    <div style={{ width: '100%', maxWidth: 380, position: 'relative', zIndex: 1 }}>
+    <div className="auth-inner" style={{ width: '100%', maxWidth: 380, position: 'relative', zIndex: 1 }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -46,7 +46,7 @@ export default function AuthPage({ onClose }) {
         </div>
 
         {/* Card */}
-        <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 8 }}>
+        <div className="auth-card" style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 8 }}>
           {/* Tab switcher */}
           <div style={{ display: 'flex', borderBottom: '1px solid var(--line)' }}>
             {[['login','Sign In'],['register','Register']].map(([m, label]) => (
@@ -113,18 +113,18 @@ export default function AuthPage({ onClose }) {
   }
 
   return (
-    <div style={{
+    <div className="auth-page" style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
       background: 'var(--bg)', padding: 20, position: 'relative', overflow: 'hidden',
     }}>
       {/* Subtle grid background */}
-      <div style={{
+      <div className="auth-grid" style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
         backgroundImage: 'linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px)',
         backgroundSize: '48px 48px', opacity: .4,
       }} />
       {/* Top accent line */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'var(--red)' }} />
+      <div className="auth-accent" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'var(--red)' }} />
       {inner}
     </div>
   );

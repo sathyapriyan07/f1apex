@@ -268,8 +268,8 @@ export default function ImportPage({ autoRun = false, autoSource = 'jolpica', au
   };
 
   const ImportRow = ({ label, keyPrefix, onErgast, onJolpica }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
-      <span style={{ minWidth: 180, fontSize: 13, color: 'var(--muted)' }}>{label}</span>
+    <div className="import-row" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+      <span className="import-row__label" style={{ fontSize: 13, color: 'var(--muted)' }}>{label}</span>
       <button className="btn btn-ghost btn-sm" onClick={onErgast} disabled={anyLoading || loading[`${keyPrefix}_ergast`]}>
         {loading[`${keyPrefix}_ergast`] ? <span className="spinner" /> : null} Ergast
       </button>
@@ -283,11 +283,11 @@ export default function ImportPage({ autoRun = false, autoSource = 'jolpica', au
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+      <div className="import-controls" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <h1 style={{ fontFamily: "'Barlow Condensed'", fontSize: 30, fontWeight: 900, letterSpacing: 1, textTransform: 'uppercase' }}>
           Import <span style={{ color: 'var(--red)' }}>Data</span>
         </h1>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="import-actions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           <button className="btn btn-yellow" disabled={anyLoading} onClick={() => importAll('jolpica')}>
             {bulkRunning ? <span className="spinner" /> : null} Fetch All (Jolpica)
           </button>
@@ -306,9 +306,9 @@ export default function ImportPage({ autoRun = false, autoSource = 'jolpica', au
 
       {/* Season selector */}
       <Panel title="⚙ Target Season">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div className="import-season" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <label style={{ margin: 0 }}>Season Year</label>
-          <input type="number" value={season} onChange={e => setSeason(e.target.value)} min="1950" max="2030" style={{ width: 100 }} />
+          <input className="import-season__input" type="number" value={season} onChange={e => setSeason(e.target.value)} min="1950" max="2030" />
         </div>
       </Panel>
 
@@ -333,8 +333,8 @@ export default function ImportPage({ autoRun = false, autoSource = 'jolpica', au
         <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.6 }}>
           Real-time and historical telemetry sessions. Import circuits first for best matching.
         </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <span style={{ minWidth: 180, fontSize: 13, color: 'var(--muted)' }}>Race Sessions</span>
+        <div className="openf1-row" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span className="openf1-row__label" style={{ fontSize: 13, color: 'var(--muted)' }}>Race Sessions</span>
           <button className="btn btn-ghost btn-sm" onClick={importOpenF1Sessions} disabled={anyLoading || loading['openf1_sessions']}>
             {loading['openf1_sessions'] ? <span className="spinner" /> : null} Import from OpenF1
           </button>

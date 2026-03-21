@@ -46,7 +46,7 @@ export default function UsersPage() {
       {error && <div className="error-msg" style={{ marginBottom: 16 }}>{error}</div>}
       {loading ? <Loader /> : (
         <div className="table-wrap">
-          <table>
+          <table className="users-table">
             <thead>
               <tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Actions</th></tr>
             </thead>

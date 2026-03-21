@@ -46,14 +46,14 @@ export function TeamsPage({ detailId, onOpenTeam, onCloseDetail } = {}) {
 
       {C.loading ? <Loader /> : C.rows.length === 0 ? <Empty icon="🏆" label="No teams yet" /> : (
         view === 'grid' ? (
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
+          <div className="grid teams-grid">
             {C.rows.map(t => (
               <TeamCard key={t.id} team={t} isAdmin={isAdmin} onClick={() => onOpenTeam?.(t.id)} onEdit={() => C.openEdit(t)} onDelete={() => C.remove(t.id)} />
             ))}
           </div>
         ) : (
           <div className="table-wrap">
-            <table>
+            <table className="teams-table">
               <thead><tr><th>Logo</th><th>Name</th><th>Nationality</th><th>Base</th><th>WCC</th><th>Founded</th>{isAdmin && <th></th>}</tr></thead>
               <tbody>
                 {C.rows.map(t => (
@@ -227,7 +227,7 @@ export function SeasonsPage() {
       {C.error && <div className="error-msg" style={{ marginBottom: 14 }}>{C.error}</div>}
       {C.loading ? <Loader /> : C.rows.length === 0 ? <Empty icon="📅" label="No seasons yet" /> : (
         <div className="table-wrap">
-          <table>
+          <table className="seasons-table">
             <thead><tr><th>Year</th><th>Rounds</th><th>Champion Driver</th><th>Champion Team</th><th>Ref</th>{isAdmin && <th></th>}</tr></thead>
             <tbody>
               {C.rows.map(s => (
@@ -316,14 +316,14 @@ export function CircuitsPage({ detailId, onOpenCircuit, onCloseDetail } = {}) {
       {C.error && <div className="error-msg" style={{ marginBottom: 14 }}>{C.error}</div>}
       {C.loading ? <Loader /> : C.rows.length === 0 ? <Empty icon="🗺" label="No circuits yet" /> : (
         view === 'grid' ? (
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
+          <div className="grid circuits-grid">
             {C.rows.map(c => (
               <CircuitCard key={c.id} circuit={c} isAdmin={isAdmin} onClick={() => onOpenCircuit?.(c.id)} onEdit={() => C.openEdit(c)} onDelete={() => C.remove(c.id)} />
             ))}
           </div>
         ) : (
           <div className="table-wrap">
-            <table>
+            <table className="circuits-table">
               <thead><tr><th>Layout</th><th>Name</th><th>City</th><th>Country</th><th>Length</th>{isAdmin && <th></th>}</tr></thead>
               <tbody>
                 {C.rows.map(c => (
@@ -404,7 +404,7 @@ export function RacesPage({ circuits, seasons }) {
       {C.error && <div className="error-msg" style={{ marginBottom: 14 }}>{C.error}</div>}
       {C.loading ? <Loader /> : C.rows.length === 0 ? <Empty icon="🏁" label="No races yet" /> : (
         <div className="table-wrap">
-          <table>
+          <table className="races-table">
             <thead><tr><th>Season</th><th>Rnd</th><th>Race</th><th>Circuit</th><th>Country</th><th>Date</th><th>Sprint</th>{isAdmin && <th></th>}</tr></thead>
             <tbody>
               {C.rows.map(r => (
@@ -415,6 +415,7 @@ export function RacesPage({ circuits, seasons }) {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       {circuits.find(c => c.id === r.circuit_id)?.layout_url && (
                         <img src={circuits.find(c => c.id === r.circuit_id).layout_url} alt=""
+                          className="race-thumb"
                           style={{ width: 40, height: 26, objectFit: 'contain', filter: 'invert(1) opacity(.4)', flexShrink: 0 }}
                           onError={e => e.target.style.display='none'} />
                       )}

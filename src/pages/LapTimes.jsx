@@ -183,12 +183,12 @@ export default function LapTimesPage({ races, drivers }) {
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+      <div className="laptimes-controls" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <h1 style={{ fontFamily: "'Barlow Condensed'", fontSize: 30, fontWeight: 900, letterSpacing: 1, textTransform: 'uppercase' }}>
           Lap <span style={{ color: 'var(--red)' }}>Times</span>
         </h1>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <select value={selectedRaceId} onChange={e => setSelectedRaceId(e.target.value)} style={{ minWidth: 280 }}>
+          <select className="laptimes-race-select" value={selectedRaceId} onChange={e => setSelectedRaceId(e.target.value)} style={{ minWidth: 280 }}>
             <option value="">— Select a Race —</option>
             {sortedRaces.map(r => <option key={r.id} value={r.id}>{r.season_year} R{r.round} – {r.name}</option>)}
           </select>
@@ -242,9 +242,11 @@ export default function LapTimesPage({ races, drivers }) {
 
             {/* Chart */}
             <div className="card" style={{ padding: 20, marginBottom: 20 }}>
-              {chartType === 'lapTimes'  && <LapTimeChart   lapsByDriver={lapsByDriver} filteredDriverIds={filteredDriverIds} driverInfo={driverInfo} maxLap={maxLap} />}
-              {chartType === 'gapToLeader' && <GapChart      lapsByDriver={lapsByDriver} filteredDriverIds={filteredDriverIds} driverInfo={driverInfo} maxLap={maxLap} />}
-              {chartType === 'sectorComp'  && <SectorChart   lapsByDriver={lapsByDriver} filteredDriverIds={filteredDriverIds} driverInfo={driverInfo} />}
+              <div className="svg-scroll">
+                {chartType === 'lapTimes'  && <LapTimeChart   lapsByDriver={lapsByDriver} filteredDriverIds={filteredDriverIds} driverInfo={driverInfo} maxLap={maxLap} />}
+                {chartType === 'gapToLeader' && <GapChart      lapsByDriver={lapsByDriver} filteredDriverIds={filteredDriverIds} driverInfo={driverInfo} maxLap={maxLap} />}
+                {chartType === 'sectorComp'  && <SectorChart   lapsByDriver={lapsByDriver} filteredDriverIds={filteredDriverIds} driverInfo={driverInfo} />}
+              </div>
             </div>
 
             {/* Data table */}
@@ -497,7 +499,7 @@ function FastestLapsTable({ lapsByDriver, filteredDriverIds, driverInfo }) {
     <div>
       <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 18, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 14, borderBottom: '1px solid var(--line)', paddingBottom: 8 }}>Fastest Laps Summary</div>
       <div className="table-wrap">
-        <table>
+        <table className="laptimes-table">
           <thead>
             <tr><th>Driver</th><th>Fastest Lap</th><th>On Lap</th><th>Avg Lap</th><th>Laps</th><th>Δ Fastest</th></tr>
           </thead>

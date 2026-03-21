@@ -57,7 +57,7 @@ export default function RaceResultsPage({ races, drivers, teams, onOpenDriver })
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+      <div className="results-controls" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div className="page-subtitle">Results</div>
           <h1 className="page-title" style={{ marginTop: 6 }}>
@@ -65,7 +65,7 @@ export default function RaceResultsPage({ races, drivers, teams, onOpenDriver })
           </h1>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <select value={selectedRaceId} onChange={e => setSelectedRaceId(e.target.value)} style={{ minWidth: 280 }}>
+          <select className="results-race-select" value={selectedRaceId} onChange={e => setSelectedRaceId(e.target.value)} style={{ minWidth: 280 }}>
             <option value="">— Select a Race —</option>
             {sortedRaces.map(r => (
               <option key={r.id} value={r.id}>{r.season_year} R{r.round} – {r.name}</option>
@@ -104,7 +104,7 @@ export default function RaceResultsPage({ races, drivers, teams, onOpenDriver })
           ? <Empty icon="📋" label="No results for this race" />
           : (
             <div className="table-wrap">
-              <table>
+              <table className="results-table">
                 <thead>
                   <tr>
                     <th>Pos</th><th>Driver</th><th>Code</th><th>Team</th>

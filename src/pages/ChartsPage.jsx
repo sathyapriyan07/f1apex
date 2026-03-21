@@ -76,10 +76,12 @@ export default function ChartsPage({ seasons }) {
           </div>
 
           <div className="card" style={{ padding: 24 }}>
-            {activeChart === 'progression'  && <PointsProgressionChart raceResults={raceResults} races={races} driverStandings={driverStandings} />}
-            {activeChart === 'constructors' && <ConstructorPointsChart constructorStandings={constructorStandings} raceResults={raceResults} races={races} />}
-            {activeChart === 'wins'         && <WinsChart driverStandings={driverStandings} constructorStandings={constructorStandings} />}
-            {activeChart === 'grid_vs_finish' && <GridVsFinishChart raceResults={raceResults} />}
+            <div className="svg-scroll">
+              {activeChart === 'progression'  && <PointsProgressionChart raceResults={raceResults} races={races} driverStandings={driverStandings} />}
+              {activeChart === 'constructors' && <ConstructorPointsChart constructorStandings={constructorStandings} raceResults={raceResults} races={races} />}
+              {activeChart === 'wins'         && <WinsChart driverStandings={driverStandings} constructorStandings={constructorStandings} />}
+              {activeChart === 'grid_vs_finish' && <GridVsFinishChart raceResults={raceResults} />}
+            </div>
           </div>
         </>
       ))}

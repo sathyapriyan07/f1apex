@@ -43,7 +43,7 @@ export default function DriversPage({ teams, detailId, onOpenDriver, onCloseDeta
 
       {C.loading ? <Loader /> : C.rows.length === 0 ? <Empty icon="👤" label="No drivers yet" /> : (
         view === 'grid' ? (
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
+          <div className="grid drivers-grid">
             {C.rows.map(d => (
               <DriverCard
                 key={d.id}
@@ -60,7 +60,7 @@ export default function DriversPage({ teams, detailId, onOpenDriver, onCloseDeta
           </div>
         ) : (
           <div className="table-wrap">
-            <table>
+            <table className="drivers-table">
               <thead>
                 <tr><th>Photo</th><th>#</th><th>Name</th><th>Code</th><th>Nationality</th><th>Team</th><th>Status</th>{isAdmin && <th></th>}</tr>
               </thead>
@@ -184,19 +184,19 @@ function DriverForm({ initial, teams, onSave, onCancel, saving, error }) {
 // ── Shared sub-components exported for other pages ────────────────────────────
 export function SectionHead({ title, count, search, setSearch, onAdd, extra }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+    <div className="section-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+      <div className="section-head__title" style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
         <div>
           <div className="page-subtitle">F1 Database</div>
           <h1 className="page-title" style={{ marginTop: 6 }}>{title}</h1>
         </div>
-        <span style={{ fontFamily: 'var(--sans)', fontSize: 12, color: 'var(--muted)', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>
+        <span className="section-head__count" style={{ fontFamily: 'var(--sans)', fontSize: 12, color: 'var(--muted)', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>
           {count} items
         </span>
       </div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div className="section-head__actions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         {extra}
-        <input style={{ minWidth: 180 }} placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)} />
+        <input className="section-head__search" style={{ minWidth: 180 }} placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)} />
         {onAdd && <button className="btn btn-red" onClick={onAdd}>+ Add</button>}
       </div>
     </div>

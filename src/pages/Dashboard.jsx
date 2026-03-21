@@ -154,7 +154,7 @@ export default function Dashboard({ setTab }) {
 
       {/* Hero: next race countdown */}
       <div className="card" style={{ padding: 18, position: 'relative', overflow: 'hidden' }}>
-        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+        <div className="dashboard-hero-top" style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="page-subtitle">{heroMode === 'upcoming' ? 'Next Race' : heroMode === 'latest' ? 'Latest Result' : 'Overview'}</div>
             <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: '-.02em', marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -181,6 +181,7 @@ export default function Dashboard({ setTab }) {
 
           {heroRace?.circuits?.layout_url ? (
             <img
+              className="dashboard-hero-layout"
               src={heroRace.circuits.layout_url}
               alt=""
               style={{ width: 220, height: 130, objectFit: 'contain', filter: 'invert(1) opacity(.55)' }}
@@ -208,7 +209,7 @@ export default function Dashboard({ setTab }) {
       </div>
 
       {/* Widgets */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div className="dashboard-widgets" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div className="card" style={{ padding: 14 }}>
           <div className="page-subtitle">Driver Standings</div>
           {driverTop.length ? (
@@ -261,9 +262,9 @@ export default function Dashboard({ setTab }) {
       {/* Latest races (horizontal scroll) */}
       <div>
         <div className="page-subtitle">Latest Races</div>
-        <div style={{ marginTop: 10, display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6 }}>
+        <div className="dashboard-latest-races" style={{ marginTop: 10, display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6 }}>
           {latestRaces.map((r) => (
-            <div key={r.id} className="card" style={{ minWidth: 280, padding: 14, flexShrink: 0 }}>
+            <div key={r.id} className="card latest-race-card" style={{ minWidth: 280, padding: 14, flexShrink: 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ color: 'var(--muted)', fontSize: 12, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase' }}>

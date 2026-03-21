@@ -148,7 +148,7 @@ export function DriverStandingsPage({ seasons }) {
           <Empty icon="📊" label="No standings data. Import or compute from results." />
         ) : (
           <div className="table-wrap">
-            <table>
+            <table className="standings-table">
               <thead>
                 <tr>
                   <th style={{ width: 66 }}>Pos</th>
@@ -197,7 +197,7 @@ export function DriverStandingsPage({ seasons }) {
                       <td style={{ textAlign: 'right' }}>
                         <div style={{ display: 'grid', gap: 6, justifyItems: 'end' }}>
                           <span style={{ fontWeight: 900, fontSize: 18 }}>{pts}</span>
-                          <div style={{ width: 120, height: 4, background: 'rgba(255,255,255,.10)', borderRadius: 2, overflow: 'hidden' }}>
+                          <div className="points-bar" style={{ width: 120, height: 4, background: 'rgba(255,255,255,.10)', borderRadius: 2, overflow: 'hidden' }}>
                             <div style={{ width: `${pct}%`, height: '100%', background: tc, borderRadius: 2, transition: 'width .5s ease' }} />
                           </div>
                         </div>
@@ -333,7 +333,7 @@ export function ConstructorStandingsPage({ seasons }) {
           <Empty icon="🏎️" label="No standings data. Import or compute from results." />
         ) : (
           <div className="table-wrap">
-            <table>
+            <table className="standings-table">
               <thead>
                 <tr>
                   <th style={{ width: 66 }}>Pos</th>
@@ -370,7 +370,7 @@ export function ConstructorStandingsPage({ seasons }) {
                       <td style={{ textAlign: 'right' }}>
                         <div style={{ display: 'grid', gap: 6, justifyItems: 'end' }}>
                           <span style={{ fontWeight: 900, fontSize: 18 }}>{pts}</span>
-                          <div style={{ width: 140, height: 4, background: 'rgba(255,255,255,.10)', borderRadius: 2, overflow: 'hidden' }}>
+                          <div className="points-bar" style={{ width: 140, height: 4, background: 'rgba(255,255,255,.10)', borderRadius: 2, overflow: 'hidden' }}>
                             <div style={{ width: `${pct}%`, height: '100%', background: tc, borderRadius: 2, transition: 'width .5s ease' }} />
                           </div>
                         </div>

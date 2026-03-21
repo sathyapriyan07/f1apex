@@ -42,7 +42,7 @@ export default function Layout({ tab, setTab, children, onSignIn }) {
               <div className="brand__divider" />
             </div>
 
-            <nav className="nav" aria-label="Primary">
+            <nav className="nav desktop-nav" aria-label="Primary">
               {tabs.map((t) => (
                 <button
                   key={t.id}
@@ -61,7 +61,7 @@ export default function Layout({ tab, setTab, children, onSignIn }) {
               <div className="avatar" aria-hidden="true">
                 {initial}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+              <div className="user-meta" style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
                 <span
                   style={{
                     fontSize: 12,
@@ -81,11 +81,13 @@ export default function Layout({ tab, setTab, children, onSignIn }) {
 
             {session ? (
               <button className="btn btn-ghost btn-xs" onClick={signOut} style={{ color: 'var(--text)' }}>
-                Sign out
+                <span className="btn-icon" aria-hidden="true">⎋</span>
+                <span className="btn-text">Sign out</span>
               </button>
             ) : (
               <button className="btn btn-red btn-xs" onClick={onSignIn}>
-                Sign in
+                <span className="btn-icon" aria-hidden="true">⇢</span>
+                <span className="btn-text">Sign in</span>
               </button>
             )}
           </div>

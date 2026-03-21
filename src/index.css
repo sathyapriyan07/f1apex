@@ -54,7 +54,7 @@ a { color: inherit; text-decoration: none; }
   width: 100%;
   max-width: var(--container);
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 28px;
 }
 
 .page-title {
@@ -538,6 +538,7 @@ tr:hover td { background: rgba(255,255,255,.05); }
 @keyframes fadeIn  { from { opacity: 0; }              to { opacity: 1; } }
 @keyframes slideUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 @keyframes slideInRight { from { opacity:0; transform:translateX(24px); } to { opacity:1; transform:translateX(0); } }
+@keyframes slideInUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes spin    { to { transform: rotate(360deg); } }
 @keyframes shimmer { 0%,100%{opacity:.4} 50%{opacity:.8} }
 
@@ -546,12 +547,151 @@ tr:hover td { background: rgba(255,255,255,.05); }
   .nav-link { padding: 10px 0; }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   .container { padding: 0 16px; }
+  .desktop-nav { display: none; }
+  .menu { display: flex; }
+  .app-main { padding-bottom: 80px; }
+
+  /* Shared: SectionHead stacks on mobile */
+  .section-head {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+  }
+  .section-head__title { width: 100%; }
+  .section-head__actions { width: 100%; }
+  .section-head__search { width: 100%; min-width: 0 !important; }
+
+  /* Page control bars */
+  .results-controls,
+  .laptimes-controls,
+  .import-controls {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .results-race-select,
+  .laptimes-race-select {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0 !important;
+  }
+
+  /* Import */
+  .import-actions { width: 100%; }
+  .import-season { flex-direction: column !important; align-items: stretch !important; }
+  .import-season__input { width: 100%; }
+  .import-row,
+  .openf1-row { flex-direction: column !important; align-items: flex-start !important; }
+  .import-row__label,
+  .openf1-row__label { width: 100%; }
+
+  /* Dashboard */
+  .dashboard-widgets { grid-template-columns: 1fr !important; }
+  .dashboard-hero-top { flex-direction: column !important; align-items: flex-start !important; }
+  .dashboard-hero-layout { width: 100% !important; height: 120px !important; }
+  .latest-race-card { padding: 10px 12px !important; min-width: 240px !important; }
+
+  /* Header: compact user area */
+  .user-meta { display: none !important; }
+  .role-badge { display: none; }
 }
 
+@media (max-width: 480px) {
+  .brand__mark { font-size: 16px; }
+  .brand__divider { display: none; }
+  .btn-text { display: none; }
+  .btn-icon { display: inline-flex; }
+
+  /* Auth: full-height on small phones + hide grid background */
+  .auth-page { padding: 0 !important; }
+  .auth-grid { display: none; }
+  .auth-inner { max-width: 100% !important; min-height: 100vh; }
+  .auth-card { border-radius: 0 !important; min-height: 100vh; }
+}
+
+/* Responsive tables */
 @media (max-width: 768px) {
-  .app-header .nav { display: none; }
-  .menu { display: flex; }
-  .app-main { padding-bottom: 70px; }
+  td, th { padding: 8px 10px; font-size: 12px; }
+  th { font-size: 10px; }
+}
+
+/* Responsive modals (bottom sheet) */
+@media (max-width: 480px) {
+  .overlay { align-items: flex-end; justify-content: center; padding: 0; }
+  .modal { max-width: 100%; border-radius: 12px 12px 0 0; max-height: 100vh; padding: 20px; width: 100%; }
+  .form-grid { grid-template-columns: 1fr; }
+}
+
+/* Slide-in panels: slide up on mobile */
+@media (max-width: 768px) {
+  .slidein-backdrop { justify-content: center; align-items: flex-end; }
+  .slidein-panel {
+    width: 100%;
+    max-width: 100%;
+    height: min(92vh, 100%);
+    border-left: none;
+    border-top: 1px solid var(--line);
+    border-radius: 12px 12px 0 0;
+    animation: slideInUp .25s cubic-bezier(.22,.68,0,1.2);
+  }
+}
+
+/* Page-specific responsive tables */
+@media (max-width: 768px) {
+  /* Drivers list: keep photo, name, team, status (and actions) */
+  .drivers-table th:nth-child(2), .drivers-table td:nth-child(2),
+  .drivers-table th:nth-child(4), .drivers-table td:nth-child(4),
+  .drivers-table th:nth-child(5), .drivers-table td:nth-child(5) { display: none; }
+
+  /* Teams list: hide Base + Founded */
+  .teams-table th:nth-child(4), .teams-table td:nth-child(4),
+  .teams-table th:nth-child(6), .teams-table td:nth-child(6) { display: none; }
+
+  /* Races table: show Season, Rnd, Race, Date only */
+  .races-table th:nth-child(4), .races-table td:nth-child(4),
+  .races-table th:nth-child(5), .races-table td:nth-child(5),
+  .races-table th:nth-child(7), .races-table td:nth-child(7) { display: none; }
+
+  /* Results: hide Code, Grid, Gap/Time, FL, Laps */
+  .results-table th:nth-child(3), .results-table td:nth-child(3),
+  .results-table th:nth-child(5), .results-table td:nth-child(5),
+  .results-table th:nth-child(8), .results-table td:nth-child(8),
+  .results-table th:nth-child(9), .results-table td:nth-child(9),
+  .results-table th:nth-child(10), .results-table td:nth-child(10) { display: none; }
+
+  /* Standings: hide points bar on mobile */
+  .standings-table .points-bar { display: none; }
+
+  /* Users: hide Joined */
+  .users-table th:nth-child(4), .users-table td:nth-child(4) { display: none; }
+
+  /* LapTimes: hide Avg Lap */
+  .laptimes-table th:nth-child(4), .laptimes-table td:nth-child(4) { display: none; }
+}
+
+@media (max-width: 480px) {
+  /* Seasons: show only Year + Rounds */
+  .seasons-table th:nth-child(3), .seasons-table td:nth-child(3),
+  .seasons-table th:nth-child(4), .seasons-table td:nth-child(4) { display: none; }
+
+  /* Races: hide circuit thumbnail in name cell */
+  .race-thumb { display: none; }
+}
+
+/* Responsive grids */
+.drivers-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.teams-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.circuits-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+@media (max-width: 768px) {
+  .drivers-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  .teams-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  .circuits-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+}
+
+/* SVG scroll containers for charts */
+.svg-scroll { overflow-x: auto; }
+.svg-scroll svg { min-width: 600px; }
+@media (max-width: 768px) {
+  .svg-scroll svg { min-width: 320px; }
 }
