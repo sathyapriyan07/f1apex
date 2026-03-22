@@ -480,6 +480,99 @@ function ChampionshipsSection({ standings, teamColor }) {
   );
 }
 
+function ResultsSection({ results, teamColor }) {
+  const sorted = [...results].sort((a, b) => {
+    const ya = Number(a.races?.season_year) || 0;
+    const yb = Number(b.races?.season_year) || 0;
+    if (yb !== ya) return yb - ya;
+    return (b.races?.round || 0) - (a.races?.round || 0);
+  });
+
+  const posColor = (pos) => {
+    if (pos === 1) return '#ffd60a';
+    if (pos <= 3) return '#e5e5ea';
+    if (pos <= 10) return teamColor;
+    return 'rgba(255,255,255,0.4)';
+  };
+
+  return (
+    <div style={{ padding: '28px 16px 0' }}>
+      <SectionLabel>RESULTS</SectionLabel>
+      <div style={{
+        background: '#1a1a1a', borderRadius: 16, overflow: 'hidden', marginTop: 14,
+      }}>
+        {sorted.map((r, i) => {
+          const isSprint = Boolean(r.races?.sprint);
+          const pts = parseFloat(r.points || 0);
+          return (
+            <div key={r.id || i} style={{
+              display: 'grid',
+              gridTemplateColumns: '44px 1fr auto',
+              alignItems: 'center',
+              gap: '0 12px',
+              padding: '12px 18px',
+              borderBottom: i < sorted.length - 1 ? '1px solid rgba(255,255,255,0.07)' : 'none',
+            }}>
+              {/* Position */}
+              <div style={{
+                fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 20,
+                color: r.position ? posColor(r.position) : 'rgba(255,255,255,0.25)',
+                letterSpacing: '-0.02em', lineHeight: 1,
+              }}>
+                {r.position ? `P${r.position}` : r.status?.slice(0, 3).toUpperCase() || '—'}
+              </div>
+
+              {/* Race info */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{
+                    fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 13, color: '#fff',
+                  }}>{r.races?.name || '—'}</span>
+                  {isSprint && (
+                    <span style={{
+                      fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700,
+                      color: '#ffd60a', background: 'rgba(255,214,10,0.12)',
+                      borderRadius: 4, padding: '2px 5px', letterSpacing: '0.04em',
+                    }}>SPRINT</span>
+                  )}
+                </div>
+                <div style={{
+                  fontFamily: 'var(--mono)', fontSize: 11,
+                  color: 'rgba(255,255,255,0.35)', marginTop: 2,
+                }}>
+                  {r.races?.season_year} · R{r.races?.round}
+                  {r.races?.circuits?.country ? ` · ${r.races.circuits.country}` : ''}
+                </div>
+              </div>
+
+              {/* Points + grid */}
+              <div style={{ textAlign: 'right' }}>
+                <div style={{
+                  fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 16,
+                  color: pts > 0 ? '#fff' : 'rgba(255,255,255,0.25)',
+                  letterSpacing: '-0.02em',
+                }}>{pts > 0 ? `${pts}pt` : '—'}</div>
+                {r.grid_position != null && (
+                  <div style={{
+                    fontFamily: 'var(--mono)', fontSize: 10,
+                    color: 'rgba(255,255,255,0.3)', marginTop: 2,
+                  }}>Grid {r.grid_position}</div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        {sorted.length === 0 && (
+          <div style={{
+            padding: '24px 18px', textAlign: 'center',
+            fontFamily: 'var(--sans)', fontSize: 13, color: 'rgba(255,255,255,0.3)',
+          }}>No results</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function DriverDetailPanel({ driverId, onClose, onOpenTeamDetail, mode = 'panel' }) {
   const [driver, setDriver] = useState(null);
   const [results, setResults] = useState([]);
@@ -594,6 +687,7 @@ export default function DriverDetailPanel({ driverId, onClose, onOpenTeamDetail,
       />
       <PerformanceCharts results={results} teamColor={teamColor} />
       <ChampionshipsSection standings={standings} teamColor={teamColor} />
+      <ResultsSection results={results} teamColor={teamColor} />
       <div style={{ height: 40 }} />
     </div>
   );
