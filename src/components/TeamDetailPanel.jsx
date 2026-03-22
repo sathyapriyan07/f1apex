@@ -36,7 +36,7 @@ function TeamHero({ team, teamColor, onClose }) {
           <img src={team.logo_url} alt={team.name}
             style={{
               height: 140, width: 'auto', objectFit: 'contain',
-              display: 'block', marginBottom: -24,
+              display: 'block', marginBottom: 20,
               position: 'relative', zIndex: 3, filter: 'none',
             }}
             onError={e => e.target.style.display = 'none'}
@@ -47,7 +47,7 @@ function TeamHero({ team, teamColor, onClose }) {
             background: `${teamColor}22`, border: `2px solid ${teamColor}44`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 24,
-            color: teamColor, marginBottom: -24, position: 'relative', zIndex: 3,
+            color: teamColor, marginBottom: 20, position: 'relative', zIndex: 3,
           }}>
             {team.name?.slice(0, 3).toUpperCase()}
           </div>
@@ -57,7 +57,7 @@ function TeamHero({ team, teamColor, onClose }) {
       {/* Info card */}
       <div style={{
         margin: '0 16px', background: '#1a1a1a', borderRadius: 20,
-        padding: '32px 20px 24px', position: 'relative', zIndex: 2,
+        padding: '24px 20px 24px', position: 'relative', zIndex: 2,
       }}>
         {/* Row 1: name + championships */}
         <div style={{
@@ -132,7 +132,7 @@ function TeamCareerStats({ results, teamColor }) {
   const totalPoles   = results.filter(r => r.grid_position === 1).length;
   const totalFL      = results.filter(r => r.fastest_lap).length;
   const totalDNFs    = results.filter(r =>
-    r.status && !String(r.status).includes('Finish') && !String(r.status).includes('Lap')
+    r.status && String(r.status).toLowerCase() !== 'finished'
   ).length;
   const bestFinish   = results.reduce((b, r) =>
     r.position && (!b || r.position < b) ? r.position : b, null

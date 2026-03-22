@@ -216,9 +216,9 @@ export const team_detail = {
   results: (teamId) =>
     supabase.from('race_results')
       .select(`
-        id, position, points, race_id, driver_id,
+        id, position, grid_position, points, status, fastest_lap, race_id, driver_id,
         races ( id, name, season_year, round, date ),
-        drivers ( id, first_name, last_name, image_url )
+        drivers ( id, first_name, last_name, image_url, code )
       `)
       .eq('team_id', teamId)
       .order('season_year', { foreignTable: 'races', ascending: false })
