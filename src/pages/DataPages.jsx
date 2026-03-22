@@ -12,7 +12,7 @@ import TeamDetailPanel from '../components/TeamDetailPanel';
 // ══════════════════════════════════════════
 // TEAMS
 // ══════════════════════════════════════════
-export function TeamsPage({ detailId, onOpenTeam, onCloseDetail } = {}) {
+export function TeamsPage({ detailId, onOpenTeam, onCloseDetail, onOpenDriver } = {}) {
   const { isAdmin } = useAuth();
   const C = useCRUD(db.teams);
   const [view, setView] = useState('grid');
@@ -24,6 +24,7 @@ export function TeamsPage({ detailId, onOpenTeam, onCloseDetail } = {}) {
           teamId={detailId}
           mode="page"
           onClose={onCloseDetail}
+          onOpenDriver={onOpenDriver}
           onEdit={(team) => C.openEdit(team)}
         />
 

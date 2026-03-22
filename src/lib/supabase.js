@@ -66,7 +66,7 @@ export const db = {
   },
   // Races
   races: {
-    list:   ()     => supabase.from('races').select('*, circuits(id, name, country)').order('season_year', { ascending: false }).order('round'),
+    list:   ()     => supabase.from('races').select('*, circuits(id, name, country, locality, layout_url)').order('season_year', { ascending: false }).order('round'),
     insert: (row)  => supabase.from('races').insert(row).select('*, circuits(id, name, country)').single(),
     update: (id, row) => supabase.from('races').update(row).eq('id', id).select('*, circuits(id, name, country)').single(),
     remove: (id)   => supabase.from('races').delete().eq('id', id),

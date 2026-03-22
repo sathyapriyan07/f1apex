@@ -1,7 +1,7 @@
 // src/components/ModernMobileMenu.jsx
 import { useEffect, useMemo, useState } from 'react';
 
-const TAB_IDS = ['dashboard', 'drivers', 'teams', 'races', 'standings'];
+const TAB_IDS = ['dashboard', 'drivers', 'teams', 'races', 'standings', 'replay'];
 
 function IconBase({ size = 22, children }) {
   return (
@@ -74,6 +74,14 @@ function TrophyIcon({ size }) {
   );
 }
 
+function PlayIcon({ size }) {
+  return (
+    <IconBase size={size}>
+      <polygon points="8 5 19 12 8 19 8 5" />
+    </IconBase>
+  );
+}
+
 export default function MobileMenu({ tab, activeTab, setTab, accentColor = 'var(--red)' }) {
   const currentTab = tab ?? activeTab;
   const items = useMemo(
@@ -83,6 +91,7 @@ export default function MobileMenu({ tab, activeTab, setTab, accentColor = 'var(
       { label: 'Teams', icon: CarIcon },
       { label: 'Races', icon: FlagIcon },
       { label: 'Standings', icon: TrophyIcon },
+      { label: 'Replay', icon: PlayIcon },
     ],
     [],
   );

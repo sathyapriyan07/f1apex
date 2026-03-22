@@ -11,6 +11,7 @@ import StandingsHub from './pages/StandingsHub';
 import { DriverStandingsPage, ConstructorStandingsPage } from './pages/Standings';
 import LapTimesPage from './pages/LapTimes';
 import ChartsPage from './pages/ChartsPage';
+import RaceReplayPage from './pages/RaceReplay';
 import ImportPage from './pages/ImportPage';
 import UsersPage from './pages/UsersPage';
 import { db } from './lib/supabase';
@@ -49,13 +50,21 @@ function Inner() {
 
 function AppShell({ onOpenAuth }) {
   const { isAdmin } = useAuth();
+  const [theme, setTheme] = useState(() => {
+    try {
+      const saved = localStorage.getItem('f1db_theme');
+      return saved === 'light' ? 'light' : 'dark';
+    } catch (e) {
+      return 'dark';
+    }
+  });
 
   const validTabs = [
     'dashboard', 'drivers', 'teams', 'seasons', 'circuits',
-    'races', 'results', 'standings', 'constructors',
+    'races', 'results', 'replay', 'standings', 'constructors',
     'laptimes', 'charts', 'import', 'users',
   ];
-  const validDetailTypes = ['driver', 'team', 'circuit'];
+  const validDetailTypes = ['driver', 'team', 'circuit', 'race'];
 
   const normalizeTab = (value) => {
     if (!value) return null;
@@ -167,6 +176,17 @@ function AppShell({ onOpenAuth }) {
     setAutoImport({ season, source });
   }, [isAdmin]);
 
+  useEffect(() => {
+    try {
+      const html = document.documentElement;
+      html.classList.remove('theme-dark', 'theme-light');
+      html.classList.add(`theme-${theme === 'light' ? 'light' : 'dark'}`);
+      localStorage.setItem('f1db_theme', theme === 'light' ? 'light' : 'dark');
+    } catch (e) {
+      // ignore
+    }
+  }, [theme]);
+
   const writeNav = (next) => {
     try {
       localStorage.setItem('f1db_nav', JSON.stringify(next));
@@ -203,7 +223,8 @@ function AppShell({ onOpenAuth }) {
     const targetTab =
       normalizedType === 'driver' ? 'drivers'
         : normalizedType === 'team' ? 'teams'
-          : 'circuits';
+          : normalizedType === 'race' ? 'results'
+            : 'circuits';
     commitNav({ tab: targetTab, detail: { type: normalizedType, id: normalizedId } });
   };
 
@@ -236,10 +257,11 @@ function AppShell({ onOpenAuth }) {
   const openDriver = (id) => handleOpenDetail('driver', id);
   const openTeam = (id) => handleOpenDetail('team', id);
   const openCircuit = (id) => handleOpenDetail('circuit', id);
+  const openRace = (id) => handleOpenDetail('race', id);
 
   const renderTab = () => {
     switch (tab) {
-      case 'dashboard':    return <Dashboard setTab={handleSetTab} />;
+      case 'dashboard':    return <Dashboard setTab={handleSetTab} onOpenDriver={openDriver} onOpenTeam={openTeam} onOpenRace={openRace} />;
       case 'drivers':      return (
         <DriversPage
           teams={teams}
@@ -252,6 +274,7 @@ function AppShell({ onOpenAuth }) {
         <TeamsPage
           detailId={detail?.type === 'team' ? detail.id : null}
           onOpenTeam={openTeam}
+          onOpenDriver={openDriver}
           onCloseDetail={handleCloseDetail}
         />
       );
@@ -264,7 +287,8 @@ function AppShell({ onOpenAuth }) {
         />
       );
       case 'races':        return <RacesPage circuits={circuits} seasons={seasons} />;
-      case 'results':      return <RaceResultsPage races={races} drivers={drivers} teams={teams} onOpenDriver={openDriver} />;
+      case 'results':      return <RaceResultsPage races={races} drivers={drivers} teams={teams} onOpenDriver={openDriver} detailRaceId={detail?.type === 'race' ? detail.id : null} />;
+      case 'replay':       return <RaceReplayPage races={races} circuits={circuits} drivers={drivers} />;
       case 'standings':    return <StandingsHub seasons={seasons} />;
       case 'constructors': return <ConstructorStandingsPage seasons={seasons} />;
       case 'laptimes':     return <LapTimesPage races={races} drivers={drivers} />;
@@ -283,7 +307,13 @@ function AppShell({ onOpenAuth }) {
   };
 
   return (
-    <Layout tab={tab} setTab={handleSetTab} onSignIn={onOpenAuth}>
+    <Layout
+      tab={tab}
+      setTab={handleSetTab}
+      onSignIn={onOpenAuth}
+      theme={theme}
+      toggleTheme={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
+    >
       {renderTab()}
     </Layout>
   );

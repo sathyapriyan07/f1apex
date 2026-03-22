@@ -1,17 +1,31 @@
 // src/components/Layout.jsx
+import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { signOut } from '../lib/supabase';
 import MobileMenu from './ModernMobileMenu';
 
-export default function Layout({ tab, setTab, children, onSignIn }) {
+export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark', toggleTheme }) {
   const { session, profile, isAdmin } = useAuth();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  const handleSetTab = (nextTab) => setTab?.(nextTab);
+  const handleSetTab = (nextTab) => {
+    setTab?.(nextTab);
+    setMobileNavOpen(false);
+  };
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') setMobileNavOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const userLinks = [
     { id: 'dashboard', label: 'Home' },
     { id: 'races', label: 'Schedule' },
     { id: 'results', label: 'Results' },
+    { id: 'replay', label: 'Replay' },
     { id: 'standings', label: 'Standings' },
     { id: 'drivers', label: 'Drivers' },
     { id: 'teams', label: 'Teams' },
@@ -37,7 +51,7 @@ export default function Layout({ tab, setTab, children, onSignIn }) {
           left: 0,
           right: 0,
           zIndex: 100,
-          background: 'rgba(0,0,0,0.75)',
+          background: 'var(--nav-bg)',
           backdropFilter: 'blur(40px) saturate(180%)',
           WebkitBackdropFilter: 'blur(40px) saturate(180%)',
           display: 'flex',
@@ -48,6 +62,30 @@ export default function Layout({ tab, setTab, children, onSignIn }) {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 24, minWidth: 0 }}>
+          <button
+            type="button"
+            className="mobile-nav-toggle"
+            onClick={() => setMobileNavOpen(true)}
+            aria-label="Open navigation"
+            style={{
+              appearance: 'none',
+              border: '1px solid var(--glass-border)',
+              background: 'var(--glass-bg)',
+              color: 'var(--text)',
+              cursor: 'pointer',
+              width: 34,
+              height: 34,
+              borderRadius: 12,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 18,
+              lineHeight: 1,
+            }}
+          >
+            ☰
+          </button>
+
           <span
             style={{
               fontFamily: 'var(--sans)',
@@ -68,7 +106,7 @@ export default function Layout({ tab, setTab, children, onSignIn }) {
             aria-label="Go to Home"
           >
             <span style={{ color: 'var(--red)' }}>F1</span>
-            <span style={{ color: 'white' }}>DB</span>
+            <span style={{ color: 'var(--text)' }}>DB</span>
           </span>
 
           <nav style={{ display: 'flex', gap: 28, alignItems: 'center' }} className="desktop-nav" aria-label="Primary">
@@ -88,16 +126,16 @@ export default function Layout({ tab, setTab, children, onSignIn }) {
                     fontSize: 13,
                     fontWeight: 600,
                     letterSpacing: '-0.01em',
-                    color: tab === link.id ? 'white' : (link.isAdmin ? 'var(--muted)' : 'var(--sub)'),
+                    color: tab === link.id ? 'var(--text)' : (link.isAdmin ? 'var(--muted)' : 'var(--sub)'),
                     transition: 'color 0.15s',
                     padding: '4px 0',
                     whiteSpace: 'nowrap',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.color = 'white';
+                    e.currentTarget.style.color = 'var(--text)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.color = tab === link.id ? 'white' : (link.isAdmin ? 'var(--muted)' : 'var(--sub)');
+                    e.currentTarget.style.color = tab === link.id ? 'var(--text)' : (link.isAdmin ? 'var(--muted)' : 'var(--sub)');
                   }}
                 >
                   {link.label}
@@ -108,6 +146,39 @@ export default function Layout({ tab, setTab, children, onSignIn }) {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <button
+            type="button"
+            onClick={() => toggleTheme?.()}
+            title={theme === 'light' ? 'Switch to Dark theme' : 'Switch to Light theme'}
+            aria-label="Toggle theme"
+            style={{
+              appearance: 'none',
+              border: '1px solid var(--glass-border)',
+              background: 'var(--glass-bg)',
+              color: 'var(--sub)',
+              cursor: 'pointer',
+              fontFamily: 'var(--sans)',
+              fontSize: 12,
+              padding: '5px 12px',
+              borderRadius: 980,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--line2)';
+              e.currentTarget.style.color = 'var(--text)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--glass-bg)';
+              e.currentTarget.style.color = 'var(--sub)';
+            }}
+          >
+            <span aria-hidden="true" style={{ fontSize: 12, lineHeight: 1 }}>{theme === 'dark' ? '☀' : '◑'}</span>
+            <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+          </button>
+
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }} className="user-info">
             <div
               style={{
@@ -121,7 +192,7 @@ export default function Layout({ tab, setTab, children, onSignIn }) {
                 fontFamily: 'var(--sans)',
                 fontWeight: 700,
                 fontSize: 12,
-                color: 'white',
+                color: 'var(--text)',
               }}
               aria-hidden="true"
             >
@@ -153,7 +224,7 @@ export default function Layout({ tab, setTab, children, onSignIn }) {
                 padding: 0,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'white';
+                e.currentTarget.style.color = 'var(--text)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.color = 'var(--muted)';
@@ -177,7 +248,7 @@ export default function Layout({ tab, setTab, children, onSignIn }) {
                 padding: 0,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'white';
+                e.currentTarget.style.color = 'var(--text)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.color = 'var(--muted)';
@@ -188,6 +259,35 @@ export default function Layout({ tab, setTab, children, onSignIn }) {
           )}
         </div>
       </header>
+
+      {mobileNavOpen ? (
+        <div className="mobile-sidebar-overlay" role="presentation" onClick={() => setMobileNavOpen(false)}>
+          <aside
+            className="mobile-sidebar"
+            role="dialog"
+            aria-label="Navigation"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mobile-sidebar__top">
+              <div className="mobile-sidebar__brand" role="button" tabIndex={0} onClick={() => handleSetTab('dashboard')}>F1DB</div>
+              <button type="button" className="mobile-sidebar__close" onClick={() => setMobileNavOpen(false)} aria-label="Close navigation">×</button>
+            </div>
+            <div className="mobile-sidebar__list" role="navigation" aria-label="Tabs">
+              {navLinks.map((link) => (
+                <button
+                  key={link.id}
+                  type="button"
+                  className={`mobile-sidebar__item ${tab === link.id ? 'is-active' : ''}`}
+                  onClick={() => handleSetTab(link.id)}
+                >
+                  <span>{link.label}</span>
+                  {tab === link.id ? <span aria-hidden="true">›</span> : null}
+                </button>
+              ))}
+            </div>
+          </aside>
+        </div>
+      ) : null}
 
       <main className="app-main" style={{ flex: 1 }}>
         <div className="container">{children}</div>

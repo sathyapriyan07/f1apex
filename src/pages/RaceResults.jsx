@@ -9,7 +9,7 @@ import { DriverPhoto, TeamLogo } from '../components/Images';
 const POSITION_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 const STATUS_OPTIONS = ['Finished', '+1 Lap', '+2 Laps', 'DNF', 'DNS', 'DSQ', 'Accident', 'Engine', 'Gearbox', 'Hydraulics', 'Brakes', 'Electrical', 'Retired'];
 
-export default function RaceResultsPage({ races, drivers, teams, onOpenDriver }) {
+export default function RaceResultsPage({ races, drivers, teams, onOpenDriver, detailRaceId }) {
   const { isAdmin } = useAuth();
   const [selectedRaceId, setSelectedRaceId] = useState('');
   const [results, setResults] = useState([]);
@@ -31,6 +31,12 @@ export default function RaceResultsPage({ races, drivers, teams, onOpenDriver })
   };
 
   useEffect(() => { if (selectedRaceId) loadResults(selectedRaceId); }, [selectedRaceId]);
+
+  useEffect(() => {
+    if (!detailRaceId) return;
+    const next = String(detailRaceId);
+    setSelectedRaceId((prev) => (String(prev) === next ? prev : next));
+  }, [detailRaceId]);
 
   const save = async (formData) => {
     setSaving(true); setError('');

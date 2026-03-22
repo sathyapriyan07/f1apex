@@ -27,7 +27,7 @@ function countdownParts(ms) {
   return { days, hrs, min, sec };
 }
 
-export default function Dashboard({ setTab }) {
+export default function Dashboard({ setTab, onOpenDriver, onOpenTeam, onOpenRace }) {
   const { isAdmin } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -215,7 +215,7 @@ export default function Dashboard({ setTab }) {
                 ].map(([num, label], i) => (
                   <div key={label} style={{ display: 'flex', alignItems: 'flex-end', gap: 0 }}>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 72, lineHeight: 1, letterSpacing: '-0.04em', color: 'white' }}>
+                    <div style={{ fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 72, lineHeight: 1, letterSpacing: '-0.04em', color: 'var(--text)' }}>
                         {num}
                       </div>
                       <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 4 }}>
@@ -233,26 +233,30 @@ export default function Dashboard({ setTab }) {
             ) : null}
 
             <div className="dashboard-tv__quicklinks">
-              {['Schedule', 'Results', 'Standings'].map((label) => (
+              {[
+                { label: 'Schedule', tab: 'races' },
+                { label: 'Results', tab: 'results' },
+                { label: 'Standings', tab: 'standings' },
+              ].map(({ label, tab }) => (
                 <button
                   key={label}
-                  onClick={() => setTab(label.toLowerCase())}
+                  onClick={() => setTab(tab)}
                   type="button"
                   style={{
-                    background: 'rgba(255,255,255,0.08)',
-                    border: 'none',
+                    background: 'var(--glass-bg)',
+                    border: '1px solid var(--glass-border)',
                     borderRadius: 980,
-                    padding: '8px 18px',
+                    padding: '8px 20px',
                     fontFamily: 'var(--sans)',
                     fontSize: 13,
                     fontWeight: 600,
-                    color: 'white',
+                    color: 'var(--text)',
                     cursor: 'pointer',
-                    transition: 'background 0.2s cubic-bezier(0.34,1.56,0.64,1)',
+                    transition: 'all 0.2s cubic-bezier(0.34,1.56,0.64,1)',
                     letterSpacing: '-0.01em',
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.14)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--line2)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--glass-bg)'; }}
                 >
                   {label}
                 </button>
@@ -261,12 +265,14 @@ export default function Dashboard({ setTab }) {
           </div>
 
           {heroRace?.circuits?.layout_url ? (
-            <img
-              className="dashboard-tv__hero-layout"
-              src={heroRace.circuits.layout_url}
-              alt=""
-              onError={(e) => (e.currentTarget.style.display = 'none')}
-            />
+            <div className="dashboard-tv__hero-layoutWrap" aria-hidden="true">
+              <img
+                className="dashboard-tv__hero-layout"
+                src={heroRace.circuits.layout_url}
+                alt=""
+                onError={(e) => (e.currentTarget.style.display = 'none')}
+              />
+            </div>
           ) : null}
         </div>
       </section>
@@ -278,7 +284,18 @@ export default function Dashboard({ setTab }) {
             {driverTop.length ? (
               <div className="dashboard-tv__list">
                 {driverTop.map((r, idx) => (
-                  <div key={r.id} className={`dashboard-tv__row ${idx === driverTop.length - 1 ? 'is-last' : ''}`}>
+                  <div
+                    key={r.id}
+                    className={`dashboard-tv__row ${idx === driverTop.length - 1 ? 'is-last' : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => onOpenDriver?.(r.driver_id || r.drivers?.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') onOpenDriver?.(r.driver_id || r.drivers?.id);
+                    }}
+                    style={{ cursor: 'pointer' }}
+                    title="Open driver"
+                  >
                     <div className="dashboard-tv__pos" style={{ color: posColor(r.position) }}>{r.position}</div>
                     <div className="dashboard-tv__bar" style={{ background: r.teams?.team_color || 'var(--red)' }} />
                     <div className="dashboard-tv__avatar">
@@ -302,7 +319,18 @@ export default function Dashboard({ setTab }) {
             {constructorTop.length ? (
               <div className="dashboard-tv__list">
                 {constructorTop.map((r, idx) => (
-                  <div key={r.id} className={`dashboard-tv__row ${idx === constructorTop.length - 1 ? 'is-last' : ''}`}>
+                  <div
+                    key={r.id}
+                    className={`dashboard-tv__row ${idx === constructorTop.length - 1 ? 'is-last' : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => onOpenTeam?.(r.team_id || r.teams?.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') onOpenTeam?.(r.team_id || r.teams?.id);
+                    }}
+                    style={{ cursor: 'pointer' }}
+                    title="Open team"
+                  >
                     <div className="dashboard-tv__pos" style={{ color: posColor(r.position) }}>{r.position}</div>
                     <div className="dashboard-tv__bar" style={{ background: r.teams?.team_color || 'var(--red)' }} />
                     <div className="dashboard-tv__teamLogo">
@@ -328,7 +356,18 @@ export default function Dashboard({ setTab }) {
           <div className="dashboard-tv__h2">Latest Races</div>
           <div className="dashboard-tv__raceRow">
             {latestRaces.map((r) => (
-              <div key={r.id} className="dashboard-tv__raceCard">
+              <div
+                key={r.id}
+                className="dashboard-tv__raceCard"
+                role="button"
+                tabIndex={0}
+                onClick={() => onOpenRace?.(r.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') onOpenRace?.(r.id);
+                }}
+                style={{ cursor: 'pointer' }}
+                title="Open race results"
+              >
                 <div className="dashboard-tv__raceMedia">
                   {r.circuits?.layout_url ? (
                     <img
