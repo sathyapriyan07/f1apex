@@ -38,8 +38,11 @@ function P1DriverHero({ entry, teams, onOpen }) {
           <div style={{ fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 14, color: '#fff', letterSpacing: '-0.01em' }}>
             {driver?.first_name} {driver?.last_name}
           </div>
-          <div style={{ fontFamily: 'var(--sans)', fontWeight: 500, fontSize: 11, color: teamColor, marginTop: 1 }}>
-            {teamName || '—'}
+          <div style={{ marginTop: 4 }}>
+            {team?.logo_url
+              ? <img src={team.logo_url} alt={teamName || ''} style={{ height: 12, maxWidth: 48, objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+              : <span style={{ fontFamily: 'var(--sans)', fontWeight: 500, fontSize: 10, color: teamColor }}>{teamName || '—'}</span>
+            }
           </div>
         </div>
         <div style={{ textAlign: 'right', marginRight: 6 }}>
@@ -87,8 +90,11 @@ function DriverStandingsList({ standings, teams, getTeamColor, onOpenDriver }) {
               <div style={{ fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 13, color: '#fff', letterSpacing: '-0.01em' }}>
                 {driver?.first_name} {driver?.last_name}
               </div>
-              <div style={{ fontFamily: 'var(--sans)', fontWeight: 500, fontSize: 11, color: teamColor, marginTop: 1 }}>
-                {teamName || '—'}
+              <div style={{ marginTop: 3 }}>
+                {(() => { const t = teams.find(x => x.name?.toLowerCase() === teamName?.toLowerCase()); return t?.logo_url
+                  ? <img src={t.logo_url} alt={teamName || ''} style={{ height: 11, maxWidth: 44, objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+                  : <span style={{ fontFamily: 'var(--sans)', fontWeight: 500, fontSize: 10, color: teamColor }}>{teamName || '—'}</span>;
+                })()}
               </div>
             </div>
             <div style={{ textAlign: 'right', marginRight: 6 }}>
