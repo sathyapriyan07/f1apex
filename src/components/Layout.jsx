@@ -7,6 +7,7 @@ import MobileMenu from './ModernMobileMenu';
 export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark', toggleTheme }) {
   const { session, profile, isAdmin } = useAuth();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const isDashboard = tab === 'dashboard';
 
   const handleSetTab = (nextTab) => {
     setTab?.(nextTab);
@@ -42,6 +43,100 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
 
   return (
     <div className="tv-theme" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      {/* Mobile header (pixel layout spec) */}
+      <header
+        className="mobile-header"
+        style={{
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 20px',
+          background: '#000',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: 'var(--sans)',
+            fontWeight: 900,
+            fontSize: 22,
+            letterSpacing: '-0.02em',
+            color: 'var(--text)',
+            cursor: 'pointer',
+            userSelect: 'none',
+          }}
+          role="button"
+          tabIndex={0}
+          onClick={() => handleSetTab('dashboard')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') handleSetTab('dashboard');
+          }}
+          aria-label="Go to Home"
+        >
+          F1<span style={{ color: 'var(--red)' }}>DB</span>
+        </span>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              background: 'rgba(255,255,255,0.08)',
+              borderRadius: 980,
+              padding: '7px 14px',
+              width: 160,
+            }}
+          >
+            <span style={{ fontSize: 13, color: 'var(--muted)' }} aria-hidden="true">🔍</span>
+            <input
+              placeholder="Search..."
+              aria-label="Search"
+              style={{
+                background: 'none',
+                border: 'none',
+                outline: 'none',
+                fontSize: 12,
+                color: 'var(--text)',
+                width: '100%',
+                fontFamily: 'var(--sans)',
+              }}
+            />
+          </div>
+
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              background: 'var(--red)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: 'var(--sans)',
+              fontWeight: 800,
+              fontSize: 14,
+              color: '#fff',
+              cursor: 'pointer',
+            }}
+            role="button"
+            tabIndex={0}
+            onClick={() => (session ? signOut() : onSignIn?.())}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                if (session) signOut();
+                else onSignIn?.();
+              }
+            }}
+            aria-label={session ? 'Sign out' : 'Sign in'}
+            title={session ? 'Sign out' : 'Sign in'}
+          >
+            {profile?.display_name?.[0]?.toUpperCase() || initial}
+          </div>
+        </div>
+      </header>
+
       <header className="app-header">
         <div className="app-header__bar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 24, minWidth: 0 }}>
@@ -163,7 +258,7 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
       ) : null}
 
       <main className="app-main" style={{ flex: 1 }}>
-        <div className="container">{children}</div>
+        {isDashboard ? children : <div className="container">{children}</div>}
       </main>
 
       <MobileMenu tab={tab} setTab={handleSetTab} accentColor="var(--red)" />
