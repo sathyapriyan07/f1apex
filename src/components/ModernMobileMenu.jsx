@@ -1,5 +1,5 @@
 // src/components/ModernMobileMenu.jsx
-import { Car, Flag, Home, Map, Trophy, User } from 'lucide-react';
+import { BarChart2, Car, Flag, Home, Map, Trophy, User } from 'lucide-react';
 
 export default function MobileMenu({ tab, activeTab, setTab }) {
   const currentTab = tab ?? activeTab ?? 'dashboard';
@@ -8,6 +8,7 @@ export default function MobileMenu({ tab, activeTab, setTab }) {
     { id: 'drivers', label: 'DRIVERS', Icon: User },
     { id: 'teams', label: 'TEAMS', Icon: Car },
     { id: 'races', label: 'RACES', Icon: Flag },
+    { id: 'results', label: 'RESULTS', Icon: BarChart2 },
     { id: 'standings', label: 'STANDINGS', Icon: Trophy },
     { id: 'circuits', label: 'CIRCUITS', Icon: Map },
   ];
@@ -36,7 +37,7 @@ export default function MobileMenu({ tab, activeTab, setTab }) {
             aria-current={isActive ? 'page' : undefined}
           >
             <Icon
-              size={22}
+              size={20}
               color={isActive ? '#ffffff' : 'rgba(255,255,255,0.35)'}
               strokeWidth={isActive ? 2.5 : 1.8}
               aria-hidden="true"

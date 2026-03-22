@@ -219,6 +219,9 @@ a { color: inherit; text-decoration: none; }
   -webkit-backdrop-filter: blur(40px) saturate(180%);
 }
 .mobile-header { display: none; }
+body.hide-mobile-header .mobile-header { display: none !important; }
+body.hide-mobile-header .app-header { display: none !important; }
+body.hide-mobile-header .app-main { padding-top: 0 !important; }
 .app-header__bar {
   height: 48px;
   display: flex;

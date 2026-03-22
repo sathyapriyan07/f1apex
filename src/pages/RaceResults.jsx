@@ -1,36 +1,22 @@
 // src/pages/RaceResults.jsx
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { db } from '../lib/supabase';
-import { useAuth } from '../hooks/useAuth';
-import Modal from '../components/Modal';
-import { Loader, Empty } from './Drivers';
-import { DriverPhoto, TeamLogo } from '../components/Images';
+import { Loader } from './Drivers';
 
-const POSITION_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
-const STATUS_OPTIONS = ['Finished', '+1 Lap', '+2 Laps', 'DNF', 'DNS', 'DSQ', 'Accident', 'Engine', 'Gearbox', 'Hydraulics', 'Brakes', 'Electrical', 'Retired'];
+export default function RaceResultsPage({ races = [], seasons = [], teams = [], onOpenDriver, detailRaceId }) {
+  const [selectedRaceId, setSelectedRaceId] = useState(null);
+  const [filterYear, setFilterYear] = useState(() => {
+    const ys = (seasons || []).map((s) => Number(s.year)).filter(Boolean);
+    if (ys.length) return Math.max(...ys);
+    const ry = (races || []).map((r) => Number(r.season_year)).filter(Boolean);
+    return ry.length ? Math.max(...ry) : null;
+  });
 
-export default function RaceResultsPage({ races, drivers, teams, onOpenDriver, detailRaceId }) {
-  const { isAdmin } = useAuth();
-  const [selectedRaceId, setSelectedRaceId] = useState('');
   const [results, setResults] = useState([]);
+  const [topThree, setTopThree] = useState([]);
+  const [fastestLapResult, setFastestLapResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [modal, setModal] = useState(null);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-
-  // Sort races newest first
-  const sortedRaces = [...races].sort((a, b) => b.season_year - a.season_year || a.round - b.round);
-
-  const loadResults = async (raceId) => {
-    if (!raceId) return;
-    setLoading(true); setError('');
-    const { data, error } = await db.race_results.listByRace(raceId);
-    if (error) setError(error.message);
-    else setResults(data || []);
-    setLoading(false);
-  };
-
-  useEffect(() => { if (selectedRaceId) loadResults(selectedRaceId); }, [selectedRaceId]);
 
   useEffect(() => {
     if (!detailRaceId) return;
@@ -38,242 +24,365 @@ export default function RaceResultsPage({ races, drivers, teams, onOpenDriver, d
     setSelectedRaceId((prev) => (String(prev) === next ? prev : next));
   }, [detailRaceId]);
 
-  const save = async (formData) => {
-    setSaving(true); setError('');
-    const payload = { ...formData, race_id: selectedRaceId };
-    let result;
-    if (modal.mode === 'add') result = await db.race_results.insert(payload);
-    else result = await db.race_results.update(modal.data.id, payload);
-    if (result.error) { setError(result.error.message); setSaving(false); return; }
-    await loadResults(selectedRaceId);
-    setModal(null); setSaving(false);
-  };
+  const filteredRaces = useMemo(() => {
+    const list = [...(races || [])];
+    if (filterYear) return list.filter((r) => Number(r.season_year) === Number(filterYear)).sort((a, b) => (a.round || 0) - (b.round || 0));
+    return list.sort((a, b) => (b.season_year - a.season_year) || (a.round || 0) - (b.round || 0));
+  }, [races, filterYear]);
 
-  const remove = async (id) => {
-    if (!confirm('Delete this result?')) return;
-    await db.race_results.remove(id);
-    setResults(r => r.filter(x => x.id !== id));
-  };
+  const selectedRace = useMemo(() => (races || []).find((r) => String(r.id) === String(selectedRaceId)) || null, [races, selectedRaceId]);
 
-  const selectedRace = races.find(r => r.id === selectedRaceId);
+  useEffect(() => {
+    if (!selectedRaceId) return;
+    let alive = true;
+    (async () => {
+      setLoading(true);
+      setError('');
+      const { data, error: e } = await db.race_results.listByRace(selectedRaceId);
+      if (!alive) return;
+      if (e) { setError(e.message); setLoading(false); return; }
+      const rows = data || [];
+      setResults(rows);
+      const podium = rows
+        .filter((r) => Number(r.position) && Number(r.position) <= 3)
+        .sort((a, b) => (a.position || 0) - (b.position || 0));
+      setTopThree(podium);
+      setFastestLapResult(rows.find((r) => r.fastest_lap) || null);
+      setLoading(false);
+    })();
+    return () => { alive = false; };
+  }, [selectedRaceId]);
 
-  // Medal colors
-  const posColor = (pos) => pos === 1 ? '#f5c518' : pos === 2 ? '#c0c0c0' : pos === 3 ? '#cd7f32' : 'var(--muted)';
+  useEffect(() => {
+    const cls = 'hide-mobile-header';
+    if (!selectedRaceId) return undefined;
+    document.body.classList.add(cls);
+    return () => document.body.classList.remove(cls);
+  }, [selectedRaceId]);
 
-  return (
-    <div>
-      {/* Header */}
-      <div className="results-controls" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-        <div>
-          <div className="page-subtitle">Results</div>
-          <h1 className="page-title" style={{ marginTop: 6 }}>
-            Race <span style={{ color: 'var(--red)' }}>Results</span>
+  if (!selectedRaceId) {
+    return (
+      <div style={{ background: '#000', minHeight: '100vh', paddingBottom: 80 }}>
+        <div style={{ padding: '16px 20px 12px' }}>
+          <h1 style={{ fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 28, letterSpacing: '-0.03em', color: 'var(--text)', margin: 0 }}>
+            Results
           </h1>
         </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <select className="results-race-select" value={selectedRaceId} onChange={e => setSelectedRaceId(e.target.value)} style={{ minWidth: 280 }}>
-            <option value="">— Select a Race —</option>
-            {sortedRaces.map(r => (
-              <option key={r.id} value={r.id}>{r.season_year} R{r.round} – {r.name}</option>
-            ))}
-          </select>
-          {isAdmin && selectedRaceId && (
-            <button className="btn btn-red" onClick={() => setModal({ mode: 'add', data: {} })}>+ Add Result</button>
-          )}
+
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            padding: '0 20px 16px',
+            overflowX: 'auto',
+            scrollbarWidth: 'none',
+          }}
+        >
+          {(seasons || []).map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setFilterYear(s.year)}
+              type="button"
+              style={{
+                padding: '6px 16px',
+                borderRadius: 980,
+                background: Number(filterYear) === Number(s.year) ? 'var(--red)' : 'rgba(255,255,255,0.08)',
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: 'var(--sans)',
+                fontWeight: 600,
+                fontSize: 12,
+                color: Number(filterYear) === Number(s.year) ? '#fff' : 'var(--sub)',
+                flexShrink: 0,
+                transition: 'all 0.15s',
+              }}
+            >
+              {s.year}
+            </button>
+          ))}
         </div>
-      </div>
 
-      {error && <div className="error-msg" style={{ marginBottom: 16 }}>{error}</div>}
-
-      {!selectedRaceId && (
-        <div className="card" style={{ padding: 40, textAlign: 'center' }}>
-          <span style={{ fontSize: 52 }}>🏁</span>
-          <p style={{ color: 'var(--muted)', marginTop: 10, fontSize: 12 }}>Select a race to view results</p>
-        </div>
-      )}
-
-      {selectedRaceId && selectedRace && (
-        <div style={{ marginBottom: 16 }} className="card">
-          <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--line)', display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-            <Info label="Circuit"  val={selectedRace.circuits?.name || '—'} />
-            <Info label="Date"     val={selectedRace.date || '—'} />
-            <Info label="Season"   val={selectedRace.season_year} />
-            <Info label="Round"    val={selectedRace.round} />
-            <Info label="Sprint"   val={selectedRace.sprint ? 'Yes' : 'No'} />
-            <Info label="Results"  val={results.length} />
-          </div>
-        </div>
-      )}
-
-      {selectedRaceId && (
-        loading ? <Loader /> : results.length === 0
-          ? <Empty icon="📋" label="No results for this race" />
-          : (
-            <div className="table-wrap">
-              <table className="results-table">
-                <thead>
-                  <tr>
-                    <th>Pos</th><th>Driver</th><th>Code</th><th>Team</th>
-                    <th>Grid</th><th>Pts</th><th>Status</th>
-                    <th>Gap / Time</th><th>FL</th><th>Laps</th>
-                    {isAdmin && <th></th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {results.map(r => (
-                    <tr key={r.id}>
-                      <td>
-                        <span style={{
-                          fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 16,
-                          color: posColor(r.position),
-                        }}>
-                          {r.position ?? 'DNF'}
-                        </span>
-                      </td>
-                      <td>
-                        <div
-                          style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: r.drivers?.id ? 'pointer' : 'default' }}
-                          onClick={() => r.drivers?.id && onOpenDriver?.(r.drivers.id)}
-                        >
-                          <DriverPhoto src={r.drivers?.image_url} name={`${r.drivers?.first_name} ${r.drivers?.last_name}`} size={28} />
-                          <b>{r.drivers?.first_name} {r.drivers?.last_name}</b>
-                        </div>
-                      </td>
-                      <td><span style={{ fontFamily: 'monospace', color: 'var(--accent)', fontWeight: 700, fontSize: 12 }}>{r.drivers?.code || '—'}</span></td>
-                      <td>
-                        {r.teams?.logo_url ? (
-                          <TeamLogo src={r.teams.logo_url} name={r.teams?.name} size={24} />
-                        ) : (
-                          <span>{r.teams?.name || '—'}</span>
-                        )}
-                      </td>
-                      <td style={{ color: 'var(--muted)' }}>{r.grid_position ?? '—'}</td>
-                      <td>
-                        <span className={`badge ${r.points > 0 ? 'badge-yellow' : 'badge-muted'}`}>
-                          {r.points ?? 0}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`badge ${r.status === 'Finished' ? 'badge-green' : r.status?.startsWith('+') ? 'badge-blue' : 'badge-red'}`}>
-                          {r.status || '—'}
-                        </span>
-                      </td>
-                      <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{r.time_or_gap || '—'}</td>
-                      <td>{r.fastest_lap ? <span title={r.fastest_lap_time} style={{ color: 'var(--accent)', fontSize: 16 }}>⚡</span> : '—'}</td>
-                      <td>{r.laps_completed ?? '—'}</td>
-                      {isAdmin && (
-                        <td>
-                          <div style={{ display: 'flex', gap: 6 }}>
-                            <button className="btn btn-ghost btn-sm" onClick={() => setModal({ mode: 'edit', data: r })}>Edit</button>
-                            <button className="btn btn-danger btn-sm" onClick={() => remove(r.id)}>Del</button>
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {filteredRaces.map((race) => (
+          <div
+            key={race.id}
+            onClick={() => setSelectedRaceId(race.id)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') setSelectedRaceId(race.id);
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              padding: '14px 20px',
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+              cursor: 'pointer',
+            }}
+          >
+            <div
+              style={{
+                width: 48,
+                height: 36,
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {race.circuits?.layout_url ? (
+                <img
+                  src={race.circuits.layout_url}
+                  alt=""
+                  style={{ maxWidth: 48, maxHeight: 36, objectFit: 'contain' }}
+                  onError={(e) => (e.currentTarget.style.display = 'none')}
+                />
+              ) : (
+                <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--muted)' }}>
+                  R{race.round}
+                </span>
+              )}
             </div>
-          )
-      )}
 
-      {modal && (
-        <Modal title={modal.mode === 'add' ? 'Add Race Result' : 'Edit Race Result'} onClose={() => setModal(null)}>
-          <ResultForm
-            initial={modal.data}
-            drivers={drivers} teams={teams}
-            onSave={save} onCancel={() => setModal(null)}
-            saving={saving} error={error}
-          />
-        </Modal>
-      )}
-    </div>
-  );
-}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontFamily: 'var(--sans)',
+                  fontWeight: 700,
+                  fontSize: 14,
+                  color: 'var(--text)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {race.name}
+              </div>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>
+                Round {race.round} · {race.circuits?.country} · {race.date}
+              </div>
+            </div>
 
-function Info({ label, val }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', padding: '4px 0' }}>
-      <span style={{ fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600 }}>{label}</span>
-      <span style={{ fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 12 }}>{val}</span>
-    </div>
-  );
-}
-
-function ResultForm({ initial, drivers, teams, onSave, onCancel, saving, error }) {
-  const [f, setF] = useState(() => {
-    const merged = {
-      driver_id: '', team_id: '', position: '', grid_position: '',
-      points: '', status: 'Finished', fastest_lap: false,
-      fastest_lap_time: '', laps_completed: '', time_or_gap: '',
-      ...initial,
-    };
-    return {
-      ...merged,
-      driver_id: merged.driver_id || merged.drivers?.id || '',
-      team_id: merged.team_id || merged.teams?.id || '',
-    };
-  });
-  const set  = k => e  => setF(p => ({ ...p, [k]: e.target.value }));
-  const setB = k => e  => setF(p => ({ ...p, [k]: e.target.checked }));
-
-  const submit = () => {
-    const payload = { ...f };
-    delete payload.drivers; delete payload.teams;
-    ['position','grid_position','laps_completed'].forEach(k => { if (payload[k] === '') payload[k] = null; else payload[k] = parseInt(payload[k]); });
-    if (payload.points === '') payload.points = 0; else payload.points = parseFloat(payload.points);
-    if (payload.team_id === '') payload.team_id = null;
-    onSave(payload);
-  };
-
-  // Auto-fill points when position changes
-  const handlePositionChange = (e) => {
-    const pos = parseInt(e.target.value);
-    setF(p => ({ ...p, position: e.target.value, points: (!isNaN(pos) && pos >= 1 && pos <= 10) ? String(POSITION_POINTS[pos - 1]) : '0' }));
-  };
+            <span style={{ color: 'var(--muted)', fontSize: 14 }} aria-hidden="true">›</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <div className="form-grid">
-        <div className="form-group full">
-          <label>Driver *</label>
-          <select value={f.driver_id} onChange={set('driver_id')}>
-            <option value="">— Select Driver —</option>
-            {drivers.map(d => <option key={d.id} value={d.id}>{d.first_name} {d.last_name} ({d.code || '?'})</option>)}
-          </select>
-        </div>
-        <div className="form-group full">
-          <label>Team</label>
-          <select value={f.team_id || ''} onChange={set('team_id')}>
-            <option value="">— Select Team —</option>
-            {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-          </select>
-        </div>
-        <div className="form-group"><label>Finish Position</label><input type="number" min="1" value={f.position || ''} onChange={handlePositionChange} /></div>
-        <div className="form-group"><label>Grid Position</label><input type="number" min="1" value={f.grid_position || ''} onChange={set('grid_position')} /></div>
-        <div className="form-group"><label>Points</label><input type="number" step="0.5" value={f.points || ''} onChange={set('points')} /></div>
-        <div className="form-group">
-          <label>Status</label>
-          <select value={f.status} onChange={set('status')}>
-            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </div>
-        <div className="form-group"><label>Laps Completed</label><input type="number" value={f.laps_completed || ''} onChange={set('laps_completed')} /></div>
-        <div className="form-group"><label>Gap / Race Time</label><input value={f.time_or_gap || ''} onChange={set('time_or_gap')} placeholder="+5.234s" /></div>
-        <div className="form-group">
-          <label>Fastest Lap</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-            <input type="checkbox" id="fl" checked={!!f.fastest_lap} onChange={setB('fastest_lap')} style={{ width: 'auto' }} />
-            <label htmlFor="fl" style={{ margin: 0, textTransform: 'none', fontSize: 13 }}>Yes</label>
+    <div style={{ background: '#111', minHeight: '100vh', paddingBottom: 80 }}>
+      <div style={{ padding: '16px 20px 8px' }}>
+        <button
+          onClick={() => setSelectedRaceId(null)}
+          type="button"
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--text)',
+            fontSize: 20,
+            padding: 0,
+            display: 'flex',
+            alignItems: 'center',
+          }}
+          aria-label="Back"
+        >
+          ←
+        </button>
+      </div>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr auto',
+          gap: 12,
+          padding: '8px 20px 16px',
+          alignItems: 'flex-start',
+        }}
+      >
+        <div>
+          <div style={{ fontFamily: 'var(--sans)', fontWeight: 400, fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>
+            Round {String(selectedRace?.round || 0).padStart(2, '0')}
+          </div>
+
+          <div style={{ fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 26, letterSpacing: '-0.03em', color: 'var(--text)', lineHeight: 1.1, marginBottom: 14 }}>
+            {(selectedRace?.name || '').replace('Grand Prix', 'GP')}
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            {topThree.map((result) => {
+              const teamColor = teams.find((t) => t.id === result.team_id || t.name === result.teams?.name)?.team_color || '#fff';
+              return (
+                <div key={result.id} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ display: 'flex', gap: 2, alignItems: 'center' }} aria-hidden="true">
+                    {[0.9, 0.6, 0.35].map((op, li) => (
+                      <div
+                        key={li}
+                        style={{
+                          width: 4,
+                          height: 16,
+                          background: teamColor,
+                          opacity: op,
+                          borderRadius: 1,
+                          transform: 'skewX(-12deg)',
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 12, color: 'var(--text)', letterSpacing: '0.04em' }}>
+                    {result.drivers?.code || '???'}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
-        <div className="form-group"><label>Fastest Lap Time</label><input value={f.fastest_lap_time || ''} onChange={set('fastest_lap_time')} placeholder="1:23.456" /></div>
+
+        <div style={{ width: 120, height: 100, flexShrink: 0 }}>
+          {selectedRace?.image_url ? (
+            <img src={selectedRace.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          ) : selectedRace?.circuits?.layout_url ? (
+            <img
+              src={selectedRace.circuits.layout_url}
+              alt=""
+              style={{ width: '100%', height: '100%', objectFit: 'contain', opacity: 0.6 }}
+              onError={(e) => (e.currentTarget.style.display = 'none')}
+            />
+          ) : null}
+        </div>
       </div>
-      {error && <div className="error-msg" style={{ marginTop: 12 }}>{error}</div>}
-      <div className="modal-actions">
-        <button className="btn btn-ghost" onClick={onCancel}>Cancel</button>
-        <button className="btn btn-red" onClick={submit} disabled={saving}>{saving ? <span className="spinner" /> : null} Save</button>
+
+      <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {fastestLapResult ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                background: 'rgba(10,132,255,0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <span style={{ fontSize: 16 }} aria-hidden="true">⏱</span>
+            </div>
+            <div>
+              <div style={{ fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 13, color: 'var(--text)' }}>
+                {fastestLapResult.drivers?.first_name} {fastestLapResult.drivers?.last_name}
+                {fastestLapResult.fastest_lap_time ? (
+                  <span style={{ color: 'var(--muted)', fontWeight: 400 }}> ({fastestLapResult.fastest_lap_time})</span>
+                ) : null}
+              </div>
+              <div style={{ fontFamily: 'var(--sans)', fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>
+                Fastest Lap
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {topThree[0] ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                background: 'rgba(255,69,58,0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <span style={{ fontSize: 16 }} aria-hidden="true">🏆</span>
+            </div>
+            <div>
+              <div style={{ fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 13, color: 'var(--text)' }}>
+                {topThree[0].drivers?.first_name} {topThree[0].drivers?.last_name}
+              </div>
+              <div style={{ fontFamily: 'var(--sans)', fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>
+                Driver of the Day
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
+
+      <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: 0 }} />
+
+      {error ? <div className="error-msg" style={{ margin: '14px 20px' }}>{error}</div> : null}
+      {loading ? <Loader /> : results.map((result) => {
+        const teamName = result.teams?.name;
+        const teamColor = teams.find((t) => t.name === teamName || t.id === result.team_id)?.team_color || 'rgba(255,255,255,0.3)';
+        const posChange = result.grid_position != null && result.position != null ? Number(result.grid_position) - Number(result.position) : null;
+        const hasPoints = Number(result.points || 0) > 0;
+
+        return (
+          <div
+            key={result.id}
+            onClick={() => onOpenDriver?.(result.driver_id || result.drivers?.id)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') onOpenDriver?.(result.driver_id || result.drivers?.id);
+            }}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '56px 1fr auto 20px',
+              alignItems: 'center',
+              gap: 0,
+              padding: '14px 20px',
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+              cursor: 'pointer',
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 18, color: 'var(--text)', letterSpacing: '-0.01em' }}>
+                {String(result.position ?? 'R').padStart(2, '0')}
+              </span>
+              {posChange !== null ? (
+                <span
+                  style={{
+                    fontFamily: 'var(--mono)',
+                    fontSize: 10,
+                    color: posChange > 0 ? '#30d158' : posChange < 0 ? '#ff453a' : 'rgba(255,255,255,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                  }}
+                >
+                  {posChange > 0 ? '↑' : posChange < 0 ? '↓' : '='} {Math.abs(posChange) || 0}
+                </span>
+              ) : null}
+            </div>
+
+            <div>
+              <div style={{ fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 15, color: 'var(--text)', letterSpacing: '-0.01em' }}>
+                {result.drivers?.first_name} {result.drivers?.last_name}
+              </div>
+              <div style={{ fontFamily: 'var(--sans)', fontWeight: 500, fontSize: 12, color: teamColor, marginTop: 2 }}>
+                {teamName || '—'}
+              </div>
+            </div>
+
+            <div style={{ textAlign: 'right', marginRight: 10 }}>
+              <div style={{ fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 18, color: 'var(--text)', letterSpacing: '-0.02em' }}>
+                {hasPoints ? result.points : ''}
+              </div>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', marginTop: 1 }}>
+                {hasPoints ? 'PTS' : (result.status || '—')}
+              </div>
+            </div>
+
+            <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 16 }} aria-hidden="true">›</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
+
