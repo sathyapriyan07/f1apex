@@ -4,15 +4,11 @@ import { db } from '../lib/supabase';
 import { useCRUD } from '../hooks/useCRUD';
 import { useAuth } from '../hooks/useAuth';
 import Modal from '../components/Modal';
-import { CircuitCard } from '../components/Images';
-import { SectionHead, RowActions, Empty, Loader, ViewToggle } from './Drivers';
+import { PageHead, PageLoader, EmptyState, RowActions } from './Drivers';
 import CircuitDetailPanel from '../components/CircuitDetailPanel';
 import TeamDetailPanel from '../components/TeamDetailPanel';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import MapIcon from '@mui/icons-material/Map';
-import SportsScoreIcon from '@mui/icons-material/SportsScore';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
 // ══════════════════════════════════════════
 // TEAMS
@@ -30,9 +26,8 @@ export function TeamsPage({ detailId, onOpenTeam, onCloseDetail, onOpenDriver } 
           mode="page"
           onClose={onCloseDetail}
           onOpenDriver={onOpenDriver}
-          onEdit={(team) => C.openEdit(team)}
+          onEdit={team => C.openEdit(team)}
         />
-
         {C.modal && (
           <Modal title={C.modal.mode === 'add' ? 'Add Team' : 'Edit Team'} onClose={() => C.setModal(null)}>
             <TeamForm initial={C.modal.data} onSave={C.save} onCancel={() => C.setModal(null)} saving={C.saving} error={C.error} />
@@ -43,45 +38,66 @@ export function TeamsPage({ detailId, onOpenTeam, onCloseDetail, onOpenDriver } 
   }
 
   return (
-    <div>
-      <SectionHead title="Teams" count={C.rows.length} search={C.search} setSearch={C.setSearch}
-        onAdd={isAdmin ? C.openAdd : null}
-        extra={<ViewToggle view={view} setView={setView} />}
+    <div style={{ background: '#000', minHeight: '100vh', paddingBottom: 100 }}>
+      <PageHead
+        title="Teams"
+        search={C.search}
+        setSearch={C.setSearch}
+        view={view}
+        setView={setView}
+        extra={isAdmin && (
+          <button className="btn btn-red" onClick={C.openAdd} type="button" style={{
+            borderRadius: 980, padding: '8px 16px', fontSize: 12, fontWeight: 700, flexShrink: 0,
+          }}>+ Add</button>
+        )}
       />
-      {C.error && <div className="error-msg" style={{ marginBottom: 14 }}>{C.error}</div>}
+      {C.error && <div className="error-msg" style={{ margin: '0 20px 14px' }}>{C.error}</div>}
 
-      {C.loading ? <Loader /> : C.rows.length === 0 ? <Empty icon={<EmojiEventsIcon sx={{ fontSize: 28, color: 'var(--muted)' }} />} label="No teams yet" /> : (
+      {C.loading ? <PageLoader /> : C.rows.length === 0 ? <EmptyState message="No teams found" /> : (
         view === 'grid' ? (
-          <div className="grid teams-grid">
+          <div className="teams-grid">
             {C.rows.map(t => (
-              <TeamCard key={t.id} team={t} isAdmin={isAdmin} onClick={() => onOpenTeam?.(t.id)} onEdit={() => C.openEdit(t)} onDelete={() => C.remove(t.id)} />
+              <TeamCard key={t.id} team={t} isAdmin={isAdmin}
+                onClick={() => onOpenTeam?.(t.id)}
+                onEdit={() => C.openEdit(t)}
+                onDelete={() => C.remove(t.id)}
+              />
             ))}
           </div>
         ) : (
-          <div className="table-wrap">
-            <table className="teams-table">
-              <thead><tr><th>Logo</th><th>Name</th><th>Nationality</th><th>Base</th><th>WCC</th><th>Founded</th>{isAdmin && <th></th>}</tr></thead>
-              <tbody>
-                {C.rows.map(t => (
-                  <tr key={t.id} onClick={() => onOpenTeam?.(t.id)} style={{ cursor: 'pointer' }}>
-                    <td style={{ width: 44 }}>
-                      <div style={{ width: 36, height: 24, display: 'flex', alignItems: 'center' }}>
-                        {t.logo_url
-                          ? <img src={t.logo_url} alt="" style={{ maxWidth: 36, maxHeight: 24, objectFit: 'contain' }} onError={e => e.target.style.display='none'} />
-                          : <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--muted)' }}>{t.name?.slice(0,4)}</span>
-                        }
-                      </div>
-                    </td>
-                    <td><b>{t.name}</b></td>
-                    <td style={{ color: 'var(--sub)', fontSize: 12 }}>{t.nationality || '—'}</td>
-                    <td style={{ color: 'var(--sub)', fontSize: 12 }}>{t.base || '—'}</td>
-                    <td><span style={{ fontFamily: 'var(--mono)', color: 'var(--accent)', fontWeight: 500 }}>{t.championships ?? '—'}</span></td>
-                    <td style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--sub)' }}>{t.first_entry || '—'}</td>
-                    {isAdmin && <td onClick={e => e.stopPropagation()}><RowActions onEdit={() => C.openEdit(t)} onDelete={() => C.remove(t.id)} /></td>}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ background: '#000' }}>
+            {C.rows.map((t, i) => (
+              <div key={t.id}
+                onClick={() => onOpenTeam?.(t.id)}
+                style={{
+                  display: 'grid', gridTemplateColumns: '56px 1fr auto 24px',
+                  alignItems: 'center', gap: 12, padding: '14px 20px',
+                  borderBottom: '1px solid rgba(255,255,255,0.07)',
+                  cursor: 'pointer', transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <div style={{ width: 40, height: 28, display: 'flex', alignItems: 'center' }}>
+                  {t.logo_url
+                    ? <img src={t.logo_url} alt="" style={{ maxWidth: 40, maxHeight: 28, objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+                    : <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>{t.name?.slice(0, 4)}</span>
+                  }
+                </div>
+                <div>
+                  <div style={{ fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 15, color: '#fff', letterSpacing: '-0.01em' }}>{t.name}</div>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>
+                    {[t.nationality, t.base].filter(Boolean).join(' · ') || '—'}
+                  </div>
+                </div>
+                {t.championships > 0 && (
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--yellow, #ffd60a)', fontWeight: 700 }}>
+                    {t.championships}x
+                  </span>
+                )}
+                <ChevronRightIcon sx={{ fontSize: 18, color: 'rgba(255,255,255,0.25)' }} />
+              </div>
+            ))}
           </div>
         )
       )}
@@ -90,6 +106,50 @@ export function TeamsPage({ detailId, onOpenTeam, onCloseDetail, onOpenDriver } 
         <Modal title={C.modal.mode === 'add' ? 'Add Team' : 'Edit Team'} onClose={() => C.setModal(null)}>
           <TeamForm initial={C.modal.data} onSave={C.save} onCancel={() => C.setModal(null)} saving={C.saving} error={C.error} />
         </Modal>
+      )}
+    </div>
+  );
+}
+
+function TeamCard({ team, isAdmin, onClick, onEdit, onDelete }) {
+  return (
+    <div
+      className="team-card"
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onClick?.(); }}
+      style={{
+        background: '#1a1a1a', borderRadius: 12, height: 160,
+        padding: 16, position: 'relative', cursor: 'pointer',
+        transition: 'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)',
+        display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+      }}
+      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+    >
+      {team.logo_url ? (
+        <img src={team.logo_url} alt={team.name}
+          style={{ height: 52, width: 'auto', objectFit: 'contain', objectPosition: 'left center', maxWidth: '70%' }}
+          onError={e => e.target.style.display = 'none'}
+        />
+      ) : (
+        <div style={{ fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 18, color: team.team_color || 'rgba(255,255,255,0.3)' }}>
+          {team.name?.slice(0, 3).toUpperCase()}
+        </div>
+      )}
+      <div style={{ fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 18, color: '#fff', letterSpacing: '-0.01em', lineHeight: 1.1 }}>
+        {team.name}
+      </div>
+      {isAdmin && (
+        <div
+          className="card-admin-actions"
+          onClick={e => e.stopPropagation()}
+          style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4, opacity: 0, transition: 'opacity 0.15s', zIndex: 3 }}
+        >
+          <button className="btn btn-ghost btn-xs" type="button" onClick={e => { e.stopPropagation(); onEdit?.(); }}>Edit</button>
+          <button className="btn btn-danger btn-xs" type="button" onClick={e => { e.stopPropagation(); onDelete?.(); }}>Del</button>
+        </div>
       )}
     </div>
   );
@@ -228,11 +288,15 @@ export function SeasonsPage() {
   const C = useCRUD(db.seasons);
 
   return (
-    <div>
-      <SectionHead title="Seasons" count={C.rows.length} search={C.search} setSearch={C.setSearch} onAdd={isAdmin ? C.openAdd : null} />
-      {C.error && <div className="error-msg" style={{ marginBottom: 14 }}>{C.error}</div>}
-      {C.loading ? <Loader /> : C.rows.length === 0 ? <Empty icon={<CalendarMonthIcon sx={{ fontSize: 28, color: 'var(--muted)' }} />} label="No seasons yet" /> : (
-        <div className="table-wrap">
+    <div style={{ background: '#000', minHeight: '100vh', paddingBottom: 100 }}>
+      <PageHead title="Seasons" search={C.search} setSearch={C.setSearch}
+        extra={isAdmin && (
+          <button className="btn btn-red" onClick={C.openAdd} type="button" style={{ borderRadius: 980, padding: '8px 16px', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>+ Add</button>
+        )}
+      />
+      {C.error && <div className="error-msg" style={{ margin: '0 20px 14px' }}>{C.error}</div>}
+      {C.loading ? <PageLoader /> : C.rows.length === 0 ? <EmptyState message="No seasons yet" /> : (
+        <div className="table-wrap" style={{ padding: '0 20px' }}>
           <table className="seasons-table">
             <thead><tr><th>Year</th><th>Rounds</th><th>Champion Driver</th><th>Champion Team</th><th>Ref</th>{isAdmin && <th></th>}</tr></thead>
             <tbody>
@@ -301,10 +365,9 @@ export function CircuitsPage({ detailId, onOpenCircuit, onCloseDetail } = {}) {
           circuitId={detailId}
           mode="page"
           onClose={onCloseDetail}
-          onEdit={(circuit) => C.openEdit(circuit)}
+          onEdit={circuit => C.openEdit(circuit)}
           onDelete={isAdmin ? async (id) => { await C.remove(id); onCloseDetail?.(); } : undefined}
         />
-
         {C.modal && (
           <Modal title={C.modal.mode === 'add' ? 'Add Circuit' : 'Edit Circuit'} onClose={() => C.setModal(null)}>
             <CircuitForm initial={C.modal.data} onSave={C.save} onCancel={() => C.setModal(null)} saving={C.saving} error={C.error} />
@@ -315,43 +378,61 @@ export function CircuitsPage({ detailId, onOpenCircuit, onCloseDetail } = {}) {
   }
 
   return (
-    <div>
-      <SectionHead title="Circuits" count={C.rows.length} search={C.search} setSearch={C.setSearch}
-        onAdd={isAdmin ? C.openAdd : null}
-        extra={<ViewToggle view={view} setView={setView} />}
+    <div style={{ background: '#000', minHeight: '100vh', paddingBottom: 100 }}>
+      <PageHead
+        title="Circuits"
+        search={C.search}
+        setSearch={C.setSearch}
+        view={view}
+        setView={setView}
+        extra={isAdmin && (
+          <button className="btn btn-red" onClick={C.openAdd} type="button" style={{
+            borderRadius: 980, padding: '8px 16px', fontSize: 12, fontWeight: 700, flexShrink: 0,
+          }}>+ Add</button>
+        )}
       />
-      {C.error && <div className="error-msg" style={{ marginBottom: 14 }}>{C.error}</div>}
-      {C.loading ? <Loader /> : C.rows.length === 0 ? <Empty icon={<MapIcon sx={{ fontSize: 28, color: 'var(--muted)' }} />} label="No circuits yet" /> : (
+      {C.error && <div className="error-msg" style={{ margin: '0 20px 14px' }}>{C.error}</div>}
+
+      {C.loading ? <PageLoader /> : C.rows.length === 0 ? <EmptyState message="No circuits found" /> : (
         view === 'grid' ? (
-          <div className="grid circuits-grid">
+          <div className="circuits-grid">
             {C.rows.map(c => (
-              <CircuitCard key={c.id} circuit={c} isAdmin={isAdmin} onClick={() => onOpenCircuit?.(c.id)} onEdit={() => C.openEdit(c)} onDelete={() => C.remove(c.id)} />
+              <CircuitCardNew key={c.id} circuit={c} isAdmin={isAdmin}
+                onClick={() => onOpenCircuit?.(c.id)}
+                onEdit={() => C.openEdit(c)}
+                onDelete={() => C.remove(c.id)}
+              />
             ))}
           </div>
         ) : (
-          <div className="table-wrap">
-            <table className="circuits-table">
-              <thead><tr><th>Layout</th><th>Name</th><th>City</th><th>Country</th><th>Length</th>{isAdmin && <th></th>}</tr></thead>
-              <tbody>
-                {C.rows.map(c => (
-                  <tr key={c.id} onClick={() => onOpenCircuit?.(c.id)} style={{ cursor: 'pointer' }}>
-                    <td style={{ width: 60 }}>
-                      <div style={{ width: 56, height: 36, background: 'var(--bg3)', borderRadius: 3, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {c.layout_url
-                          ? <img src={c.layout_url} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', filter: 'invert(1) opacity(.5)' }} onError={e => e.target.style.display='none'} />
-                          : <span style={{ fontFamily: 'var(--mono)', fontSize: 8, color: 'var(--muted)' }}>—</span>
-                        }
-                      </div>
-                    </td>
-                    <td><b>{c.name}</b></td>
-                    <td style={{ fontSize: 12, color: 'var(--sub)' }}>{c.locality || '—'}</td>
-                    <td style={{ fontSize: 12, color: 'var(--sub)' }}>{c.country || '—'}</td>
-                    <td><span style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--sub)' }}>{c.length_km ? `${c.length_km} km` : '—'}</span></td>
-                    {isAdmin && <td onClick={e => e.stopPropagation()}><RowActions onEdit={() => C.openEdit(c)} onDelete={() => C.remove(c.id)} /></td>}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ background: '#000' }}>
+            {C.rows.map((c, i) => (
+              <div key={c.id}
+                onClick={() => onOpenCircuit?.(c.id)}
+                style={{
+                  display: 'grid', gridTemplateColumns: '68px 1fr 24px',
+                  alignItems: 'center', gap: 12, padding: '14px 20px',
+                  borderBottom: '1px solid rgba(255,255,255,0.07)',
+                  cursor: 'pointer', transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <div style={{ width: 60, height: 44, background: '#1a1a1a', borderRadius: 6, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {c.layout_url
+                    ? <img src={c.layout_url} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', filter: 'invert(1) opacity(0.45)' }} onError={e => e.target.style.display = 'none'} />
+                    : <span style={{ fontFamily: 'var(--mono)', fontSize: 8, color: 'rgba(255,255,255,0.2)' }}>—</span>
+                  }
+                </div>
+                <div>
+                  <div style={{ fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 15, color: '#fff', letterSpacing: '-0.01em' }}>{c.name}</div>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>
+                    {[c.locality, c.country].filter(Boolean).join(', ')}{c.length_km ? ` · ${c.length_km}km` : ''}
+                  </div>
+                </div>
+                <ChevronRightIcon sx={{ fontSize: 18, color: 'rgba(255,255,255,0.25)' }} />
+              </div>
+            ))}
           </div>
         )
       )}
@@ -359,6 +440,49 @@ export function CircuitsPage({ detailId, onOpenCircuit, onCloseDetail } = {}) {
         <Modal title={C.modal.mode === 'add' ? 'Add Circuit' : 'Edit Circuit'} onClose={() => C.setModal(null)}>
           <CircuitForm initial={C.modal.data} onSave={C.save} onCancel={() => C.setModal(null)} saving={C.saving} error={C.error} />
         </Modal>
+      )}
+    </div>
+  );
+}
+
+function CircuitCardNew({ circuit: c, isAdmin, onClick, onEdit, onDelete }) {
+  return (
+    <div
+      className="circuit-card"
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onClick?.(); }}
+      style={{
+        background: '#1a1a1a', borderRadius: 12, height: 180,
+        overflow: 'hidden', position: 'relative', cursor: 'pointer',
+        transition: 'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)',
+        display: 'flex', flexDirection: 'column',
+      }}
+      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+    >
+      <div style={{ flex: '0 0 55%', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+        {c.layout_url
+          ? <img src={c.layout_url} alt="" style={{ width: '80%', height: '80%', objectFit: 'contain', filter: 'invert(1) opacity(0.5)' }} onError={e => e.target.style.display = 'none'} />
+          : <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'rgba(255,255,255,0.15)' }}>—</span>
+        }
+      </div>
+      <div style={{ flex: 1, padding: '10px 14px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div style={{ fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 15, color: '#fff', letterSpacing: '-0.01em', lineHeight: 1.2 }}>{c.name}</div>
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 3 }}>
+          {[c.locality, c.country].filter(Boolean).join(', ')}
+        </div>
+      </div>
+      {isAdmin && (
+        <div
+          className="card-admin-actions"
+          onClick={e => e.stopPropagation()}
+          style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4, opacity: 0, transition: 'opacity 0.15s', zIndex: 3 }}
+        >
+          <button className="btn btn-ghost btn-xs" type="button" onClick={e => { e.stopPropagation(); onEdit?.(); }}>Edit</button>
+          <button className="btn btn-danger btn-xs" type="button" onClick={e => { e.stopPropagation(); onDelete?.(); }}>Del</button>
+        </div>
       )}
     </div>
   );
@@ -557,75 +681,73 @@ export function RacesPage({ circuits, seasons }) {
   const C = useCRUD(db.races);
 
   return (
-    <div>
-      <SectionHead title="Races" count={C.rows.length} search={C.search} setSearch={C.setSearch} onAdd={isAdmin ? C.openAdd : null} />
-      {C.error && <div className="error-msg" style={{ marginBottom: 14 }}>{C.error}</div>}
-      {C.loading ? <Loader /> : C.rows.length === 0 ? <Empty icon={<SportsScoreIcon sx={{ fontSize: 28, color: 'var(--muted)' }} />} label="No races yet" /> : (
-        <div className="table-wrap races-table-wrap">
-          <div className="races-cards" aria-label="Races list">
-            {C.rows.map((r) => {
-              const circuit = circuits.find((c) => c.id === r.circuit_id);
-              const circuitName = r.circuits?.name || circuit?.name || 'â€”';
-              const country = r.circuits?.country || circuit?.country || '';
-              return (
-                <div key={r.id} className="race-card">
-                  {circuit?.layout_url ? (
-                    <img
-                      src={circuit.layout_url}
-                      alt=""
-                      className="race-card__thumb"
-                      onError={(e) => (e.target.style.display = 'none')}
-                    />
-                  ) : null}
-                  <div className="race-card__content">
-                    <div className="race-card__name">{r.name}</div>
-                    <div className="race-card__meta">
-                      <span>{r.season_year} · R{r.round}</span>
-                      <span>·</span>
-                      <span>{r.date || 'â€”'}</span>
-                      {r.sprint ? <span className="badge badge-yellow">Sprint</span> : null}
-                    </div>
-                    <div className="race-card__sub">
-                      {circuitName}{country ? ` · ${country}` : ''}
-                    </div>
-                  </div>
-                  {isAdmin ? (
-                    <div className="race-card__actions">
-                      <RowActions onEdit={() => C.openEdit(r)} onDelete={() => C.remove(r.id)} />
-                    </div>
-                  ) : null}
+    <div style={{ background: '#000', minHeight: '100vh', paddingBottom: 100 }}>
+      <PageHead
+        title="Schedule"
+        search={C.search}
+        setSearch={C.setSearch}
+        extra={isAdmin && (
+          <button className="btn btn-red" onClick={C.openAdd} type="button" style={{
+            borderRadius: 980, padding: '8px 16px', fontSize: 12, fontWeight: 700, flexShrink: 0,
+          }}>+ Add</button>
+        )}
+      />
+      {C.error && <div className="error-msg" style={{ margin: '0 20px 14px' }}>{C.error}</div>}
+      {C.loading ? <PageLoader /> : C.rows.length === 0 ? <EmptyState message="No races scheduled" /> : (
+        <div>
+          {C.rows.map((r) => {
+            const circuit = circuits.find(c => c.id === r.circuit_id);
+            const layoutUrl = r.circuits?.layout_url || circuit?.layout_url;
+            const locality = r.circuits?.locality || circuit?.locality || r.circuits?.country || circuit?.country || '—';
+            const d = r.date ? new Date(r.date) : null;
+            const day = d ? String(d.getDate()).padStart(2, '0') : '—';
+            const mon = d ? d.toLocaleDateString('en-GB', { month: 'short' }) : '';
+            return (
+              <div key={r.id}
+                style={{
+                  display: 'grid', gridTemplateColumns: '52px 1fr 68px auto',
+                  alignItems: 'center', gap: 12, padding: '14px 20px',
+                  borderBottom: '1px solid rgba(255,255,255,0.07)',
+                  transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <div>
+                  <div style={{ fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 20, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em' }}>{day}</div>
+                  <div style={{ fontFamily: 'var(--sans)', fontWeight: 500, fontSize: 13, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{mon}</div>
                 </div>
-              );
-            })}
-          </div>
-
-          <table className="races-table">
-            <thead><tr><th>Season</th><th>Rnd</th><th>Race</th><th>Circuit</th><th>Country</th><th>Date</th><th>Sprint</th>{isAdmin && <th></th>}</tr></thead>
-            <tbody>
-              {C.rows.map(r => (
-                <tr key={r.id}>
-                  <td><span style={{ fontFamily: 'var(--mono)', color: 'var(--red)', fontSize: 12, fontWeight: 500 }}>{r.season_year}</span></td>
-                  <td><span style={{ fontFamily: 'var(--mono)', color: 'var(--sub)', fontSize: 12 }}>{r.round}</span></td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      {circuits.find(c => c.id === r.circuit_id)?.layout_url && (
-                        <img src={circuits.find(c => c.id === r.circuit_id).layout_url} alt=""
-                          className="race-thumb"
-                          style={{ width: 40, height: 26, objectFit: 'contain', filter: 'invert(1) opacity(.4)', flexShrink: 0 }}
-                          onError={e => e.target.style.display='none'} />
-                      )}
-                      <b style={{ fontSize: 13 }}>{r.name}</b>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 15, color: '#fff', letterSpacing: '-0.01em' }}>
+                      {r.name?.replace('Grand Prix', 'GP')}
+                    </span>
+                    {r.sprint && <span style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, color: '#ffd60a', background: 'rgba(255,214,10,0.12)', borderRadius: 4, padding: '2px 5px' }}>SPRINT</span>}
+                  </div>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>
+                    R{String(r.round || 0).padStart(2, '0')} · {locality}
+                  </div>
+                </div>
+                <div style={{ width: 64, height: 40, flexShrink: 0 }}>
+                  {layoutUrl && (
+                    <img src={layoutUrl} alt=""
+                      style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'brightness(0) invert(1) opacity(0.5)' }}
+                      onError={e => e.target.style.display = 'none'}
+                    />
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {isAdmin && (
+                    <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: 4 }}>
+                      <button className="btn btn-ghost btn-xs" type="button" onClick={() => C.openEdit(r)}>Edit</button>
+                      <button className="btn btn-danger btn-xs" type="button" onClick={() => C.remove(r.id)}>Del</button>
                     </div>
-                  </td>
-                  <td style={{ fontSize: 12, color: 'var(--sub)' }}>{r.circuits?.name || '—'}</td>
-                  <td style={{ fontSize: 12, color: 'var(--muted)' }}>{r.circuits?.country || '—'}</td>
-                  <td><span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--sub)' }}>{r.date || '—'}</span></td>
-                  <td>{r.sprint ? <span className="badge badge-yellow">Sprint</span> : '—'}</td>
-                  {isAdmin && <td><RowActions onEdit={() => C.openEdit(r)} onDelete={() => C.remove(r.id)} /></td>}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  )}
+                  <ChevronRightIcon sx={{ fontSize: 18, color: 'rgba(255,255,255,0.25)' }} />
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
       {C.modal && (
@@ -636,6 +758,7 @@ export function RacesPage({ circuits, seasons }) {
     </div>
   );
 }
+
 
 function RaceForm({ initial, circuits, seasons, onSave, onCancel, saving, error }) {
   const [f, setF] = useState(() => {
