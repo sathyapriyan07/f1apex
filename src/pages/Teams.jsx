@@ -8,7 +8,7 @@ import TeamDetailPanel from '../components/TeamDetailPanel';
 import { TeamForm } from './DataPages';
 import { Loader } from './Drivers';
 
-export default function TeamsPage({ detailId, onOpenTeam, onCloseDetail, onOpenDriver } = {}) {
+export default function TeamsPage({ detailId, onOpenTeam, onCloseDetail, onOpenDriver, onOpenRace } = {}) {
   const { isAdmin } = useAuth();
   const C = useCRUD(db.teams);
   const [view, setView] = useState('grid'); // 'grid' | 'list'
@@ -21,7 +21,7 @@ export default function TeamsPage({ detailId, onOpenTeam, onCloseDetail, onOpenD
           mode="page"
           onClose={onCloseDetail}
           onOpenDriver={onOpenDriver}
-          onEdit={(team) => C.openEdit(team)}
+          onOpenRace={onOpenRace}
         />
 
         {C.modal && (

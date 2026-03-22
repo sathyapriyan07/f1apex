@@ -23,7 +23,7 @@ function SectionLabel({ children }) {
   );
 }
 
-function DriverHero({ driver, team, teamColor, onClose, previousTeams }) {
+function DriverHero({ driver, team, teamColor, onClose, previousTeams, onOpenTeam }) {
   return (
     <div style={{ background: '#000', position: 'relative', paddingTop: 0 }}>
       <button onClick={onClose} style={{
@@ -95,16 +95,21 @@ function DriverHero({ driver, team, teamColor, onClose, previousTeams }) {
               fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 13,
               color: 'rgba(255,255,255,0.5)', marginBottom: 8,
             }}>Team</div>
-            {team?.logo_url ? (
-              <img src={team.logo_url} alt={team.name}
-                style={{ height: 28, maxWidth: 80, objectFit: 'contain' }}
-                onError={e => e.target.style.display = 'none'}
-              />
-            ) : (
-              <span style={{
-                fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 14, color: teamColor,
-              }}>{team?.name?.slice(0, 3).toUpperCase() || '—'}</span>
-            )}
+            <div
+              onClick={() => team?.id && onOpenTeam?.(team.id)}
+              style={{ cursor: team?.id && onOpenTeam ? 'pointer' : 'default', display: 'inline-block' }}
+            >
+              {team?.logo_url ? (
+                <img src={team.logo_url} alt={team.name}
+                  style={{ height: 28, maxWidth: 80, objectFit: 'contain' }}
+                  onError={e => e.target.style.display = 'none'}
+                />
+              ) : (
+                <span style={{
+                  fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 14, color: teamColor,
+                }}>{team?.name?.slice(0, 3).toUpperCase() || '—'}</span>
+              )}
+            </div>
           </div>
 
           {/* Date of Birth */}
@@ -134,14 +139,18 @@ function DriverHero({ driver, team, teamColor, onClose, previousTeams }) {
               {previousTeams.map(t =>
                 t.logo_url ? (
                   <img key={t.id} src={t.logo_url} alt={t.name}
-                    style={{ height: 22, maxWidth: 40, objectFit: 'contain' }}
+                    onClick={() => t.id && onOpenTeam?.(t.id)}
+                    style={{ height: 22, maxWidth: 40, objectFit: 'contain', cursor: onOpenTeam ? 'pointer' : 'default' }}
                     onError={e => e.target.style.display = 'none'}
                   />
                 ) : (
-                  <span key={t.id} style={{
-                    fontFamily: 'var(--mono)', fontSize: 10,
-                    color: t.team_color || 'var(--muted)', fontWeight: 700,
-                  }}>{t.name?.slice(0, 3).toUpperCase()}</span>
+                  <span key={t.id}
+                    onClick={() => t.id && onOpenTeam?.(t.id)}
+                    style={{
+                      fontFamily: 'var(--mono)', fontSize: 10,
+                      color: t.team_color || 'var(--muted)', fontWeight: 700,
+                      cursor: onOpenTeam ? 'pointer' : 'default',
+                    }}>{t.name?.slice(0, 3).toUpperCase()}</span>
                 )
               )}
               {previousTeams.length === 0 && (
@@ -690,6 +699,7 @@ export default function DriverDetailPanel({ driverId, onClose, onOpenTeamDetail,
         driver={driver} team={team}
         teamColor={teamColor} onClose={onClose}
         previousTeams={previousTeams}
+        onOpenTeam={onOpenTeamDetail}
       />
       <CareerStatsSection results={results} standings={standings} />
       <SeasonStatsSection
