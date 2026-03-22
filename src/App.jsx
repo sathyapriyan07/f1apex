@@ -262,7 +262,7 @@ function AppShell({ onOpenAuth }) {
 
   const renderTab = () => {
     switch (tab) {
-      case 'dashboard':    return <Dashboard setTab={handleSetTab} teams={teams} onOpenDriver={openDriver} />;
+      case 'dashboard':    return <Dashboard setTab={handleSetTab} races={races} seasons={seasons} teams={teams} drivers={drivers} onOpenRaceResult={openRace} />;
       case 'drivers':      return (
         <DriversPage
           teams={teams}

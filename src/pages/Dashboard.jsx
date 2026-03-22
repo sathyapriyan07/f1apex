@@ -1,662 +1,468 @@
 // src/pages/Dashboard.jsx
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { db } from '../lib/supabase';
-import { useAuth } from '../hooks/useAuth';
 
-function countdownParts(ms) {
-  const clamped = Math.max(0, ms);
-  const totalSec = Math.floor(clamped / 1000);
-  const days = Math.floor(totalSec / 86400);
-  const hrs = Math.floor((totalSec % 86400) / 3600);
-  const min = Math.floor((totalSec % 3600) / 60);
-  const sec = totalSec % 60;
-  return { days, hrs, min, sec };
+// ── Countdown hook ────────────────────────────────────────────────────────────
+function useCountdown(dateStr) {
+  const [cd, setCd] = useState({ days: 0, hrs: 0, min: 0 });
+  useEffect(() => {
+    const tick = () => {
+      const diff = new Date(dateStr) - new Date();
+      if (diff <= 0) return;
+      setCd({
+        days: Math.floor(diff / 86400000),
+        hrs:  Math.floor((diff % 86400000) / 3600000),
+        min:  Math.floor((diff % 3600000) / 60000),
+      });
+    };
+    tick();
+    const id = setInterval(tick, 60000);
+    return () => clearInterval(id);
+  }, [dateStr]);
+  return cd;
 }
 
-export default function Dashboard({ setTab, teams = [], onOpenDriver }) {
-  const { isAdmin } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [now, setNow] = useState(() => Date.now());
-
-  const [races, setRaces] = useState([]);
-  const [driverTop, setDriverTop] = useState([]);
-  const [constructorTop, setConstructorTop] = useState([]);
-
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, []);
-
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      setLoading(true);
-      setError('');
-      const [s, r] = await Promise.all([db.seasons.list(), db.races.list()]);
-      if (!alive) return;
-      if (s.error) { setError(s.error.message); setLoading(false); return; }
-      if (r.error) { setError(r.error.message); setLoading(false); return; }
-
-      const seasonsList = s.data || [];
-      const racesList = r.data || [];
-      setRaces(racesList);
-
-      const latestYear = Math.max(0, ...seasonsList.map((x) => Number(x.year) || 0));
-      if (latestYear) {
-        const [ds, cs] = await Promise.all([
-          db.driver_standings.listBySeason(latestYear),
-          db.constructor_standings.listBySeason(latestYear),
-        ]);
-        if (!alive) return;
-
-        const dsRows = ds.error ? [] : (ds.data || []);
-        const csRows = cs.error ? [] : (cs.data || []);
-
-        // If standings tables are empty but results exist, compute from results for display.
-        if (dsRows.length === 0 && csRows.length === 0) {
-          const { data: rr, error: rrError } = await db.race_results.listBySeason(latestYear);
-          if (!alive) return;
-          if (!rrError && (rr || []).length) {
-            const driverTotals = {};
-            const teamTotals = {};
-            for (const res of rr || []) {
-              if (res.driver_id) {
-                if (!driverTotals[res.driver_id]) {
-                  driverTotals[res.driver_id] = {
-                    driver_id: res.driver_id,
-                    team_id: res.team_id,
-                    points: 0,
-                    wins: 0,
-                    drivers: res.drivers || null,
-                    teams: res.teams || null,
-                  };
-                }
-                driverTotals[res.driver_id].points += Number(res.points || 0);
-                if (res.position === 1) driverTotals[res.driver_id].wins += 1;
-                if (res.team_id) {
-                  driverTotals[res.driver_id].team_id = res.team_id;
-                  if (res.teams) driverTotals[res.driver_id].teams = res.teams;
-                }
-                if (res.drivers) driverTotals[res.driver_id].drivers = res.drivers;
-              }
-
-              if (res.team_id) {
-                if (!teamTotals[res.team_id]) {
-                  teamTotals[res.team_id] = {
-                    team_id: res.team_id,
-                    points: 0,
-                    wins: 0,
-                    teams: res.teams || null,
-                  };
-                }
-                teamTotals[res.team_id].points += Number(res.points || 0);
-                if (res.position === 1) teamTotals[res.team_id].wins += 1;
-                if (res.teams) teamTotals[res.team_id].teams = res.teams;
-              }
-            }
-
-            const driversSorted = Object.values(driverTotals).sort((a, b) => b.points - a.points || b.wins - a.wins);
-            const teamsSorted = Object.values(teamTotals).sort((a, b) => b.points - a.points || b.wins - a.wins);
-
-            const computedDriverRows = driversSorted.map((row, i) => ({
-              ...row,
-              season_year: Number(latestYear),
-              position: i + 1,
-              id: `${latestYear}-d-${row.driver_id}`,
-            }));
-            const computedTeamRows = teamsSorted.map((row, i) => ({
-              ...row,
-              season_year: Number(latestYear),
-              position: i + 1,
-              id: `${latestYear}-t-${row.team_id}`,
-            }));
-
-            setDriverTop(computedDriverRows.slice(0, 5));
-            setConstructorTop(computedTeamRows.slice(0, 5));
-
-            // Admin: best-effort upsert so the Standings pages can use the stored tables.
-            if (isAdmin) {
-              const upsertDrivers = driversSorted.map((row, i) => ({
-                driver_id: row.driver_id,
-                team_id: row.team_id,
-                points: row.points,
-                wins: row.wins,
-                season_year: Number(latestYear),
-                position: i + 1,
-              }));
-              const upsertTeams = teamsSorted.map((row, i) => ({
-                team_id: row.team_id,
-                points: row.points,
-                wins: row.wins,
-                season_year: Number(latestYear),
-                position: i + 1,
-              }));
-              await db.driver_standings.upsert(upsertDrivers);
-              await db.constructor_standings.upsert(upsertTeams);
-            }
-
-            setLoading(false);
-            return;
-          }
-        }
-
-        if (!ds.error) setDriverTop((ds.data || []).slice(0, 5));
-        if (!cs.error) setConstructorTop((cs.data || []).slice(0, 5));
-      }
-
-      setLoading(false);
-    })();
-    return () => { alive = false; };
-  }, [isAdmin]);
-
-  const { nextRace } = useMemo(() => {
-    const today = new Date();
-    const normalized = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-    const todayMs = normalized(today);
-
-    const parsed = (races || [])
-      .map((r) => ({ r, dateMs: r.date ? normalized(new Date(r.date)) : null }))
-      .filter((x) => x.dateMs != null)
-      .sort((a, b) => a.dateMs - b.dateMs || (a.r.round || 0) - (b.r.round || 0));
-
-    const next = parsed.find((x) => x.dateMs >= todayMs)?.r || null;
-    const latest = parsed.length ? parsed[parsed.length - 1].r : null;
-    return { nextRace: next || latest || null };
-  }, [races]);
-
-  const countdownMs = useMemo(() => {
-    if (!nextRace?.date) return 0;
-    const raceDate = new Date(nextRace.date).getTime();
-    return raceDate - now;
-  }, [nextRace?.date, now]);
-
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: 80, background: '#000' }}>
-        <span className="spinner spinner-lg" />
-      </div>
-    );
-  }
-
-  const countdown = countdownParts(countdownMs);
-  const driverStandings = driverTop.slice(0, 3);
-  const constructorStandings = constructorTop.slice(0, 3);
-
-  const handleSetTab = (t) => setTab?.(t);
-
+// ── Podium strips ─────────────────────────────────────────────────────────────
+function PodiumStrips({ topThree, teams }) {
+  if (!topThree.length) return null;
   return (
-    <div style={{ background: '#000', minHeight: '100%', color: 'var(--text)' }}>
-      {error ? <div className="error-msg">{error}</div> : null}
-
-      <section
-        style={{
-          padding: '20px 20px 16px',
-          background: '#000',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <div style={{ paddingRight: nextRace?.circuits?.layout_url ? '46%' : 0 }}>
-          <div
-            style={{
-              fontFamily: 'var(--mono)',
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              color: 'var(--muted)',
-              marginBottom: 6,
-            }}
-          >
-            NEXT RACE
+    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+      {topThree.map(result => {
+        const team = teams.find(t => t.name === result.teams?.name || t.id === result.team_id);
+        const teamColor = team?.team_color || '#fff';
+        return (
+          <div key={result.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ display: 'flex', gap: 1.5 }}>
+              {[0.9, 0.6, 0.35].map((op, i) => (
+                <div key={i} style={{
+                  width: 3, height: 13, background: teamColor,
+                  opacity: op, borderRadius: 1, transform: 'skewX(-12deg)',
+                }} />
+              ))}
+            </div>
+            <span style={{
+              fontFamily: 'var(--mono)', fontWeight: 700,
+              fontSize: 11, color: '#fff', letterSpacing: '0.04em',
+            }}>
+              {result.drivers?.code || '???'}
+            </span>
           </div>
-
-          <div
-            style={{
-              fontFamily: 'var(--sans)',
-              fontWeight: 800,
-              fontSize: 20,
-              letterSpacing: '-0.02em',
-              color: 'var(--text)',
-              lineHeight: 1.2,
-              marginBottom: 6,
-            }}
-          >
-            {nextRace?.name || 'Japanese Grand Prix'}
-          </div>
-
-          <div
-            style={{
-              fontFamily: 'var(--sans)',
-              fontSize: 12,
-              color: 'var(--muted)',
-              marginBottom: 18,
-            }}
-          >
-            {nextRace?.season_year || '2026'} · Round {nextRace?.round || '3'} · {nextRace?.circuits?.country || 'Japan'}
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 0 }}>
-            {[
-              [countdown.days, 'DAYS'],
-              [countdown.hrs, 'HRS'],
-              [countdown.min, 'MIN'],
-              [countdown.sec, 'SEC'],
-            ].map(([val, label], i) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'flex-end' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div
-                    style={{
-                      fontFamily: 'var(--sans)',
-                      fontWeight: 900,
-                      fontSize: 36,
-                      lineHeight: 1,
-                      letterSpacing: '-0.02em',
-                      color: 'var(--text)',
-                    }}
-                  >
-                    {String(val ?? 0).padStart(2, '0')}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: 'var(--mono)',
-                      fontSize: 8,
-                      color: 'var(--muted)',
-                      letterSpacing: '0.1em',
-                      textTransform: 'uppercase',
-                      marginTop: 3,
-                    }}
-                  >
-                    {label}
-                  </div>
-                </div>
-                {i < 3 ? (
-                  <div
-                    style={{
-                      width: 5,
-                      height: 5,
-                      borderRadius: '50%',
-                      background: 'var(--red)',
-                      margin: '0 6px',
-                      marginBottom: 14,
-                      flexShrink: 0,
-                    }}
-                    aria-hidden="true"
-                  />
-                ) : null}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {nextRace?.circuits?.layout_url ? (
-          <div
-            style={{
-              position: 'absolute',
-              right: 16,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              width: '42%',
-              maskImage: 'linear-gradient(to right, transparent 0%, black 30%)',
-              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 30%)',
-              pointerEvents: 'none',
-            }}
-          >
-            <img
-              src={nextRace.circuits.layout_url}
-              alt=""
-              style={{
-                width: '100%',
-                height: 'auto',
-                objectFit: 'contain',
-                display: 'block',
-              }}
-              onError={(e) => (e.currentTarget.parentElement.style.display = 'none')}
-            />
-          </div>
-        ) : null}
-      </section>
-
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 20px' }} />
-
-      <section style={{ padding: '8px 20px 28px', background: '#000' }}>
-        <div
-          style={{
-            fontFamily: 'var(--sans)',
-            fontWeight: 800,
-            fontSize: 22,
-            letterSpacing: '-0.01em',
-            marginBottom: 16,
-            color: 'var(--text)',
-          }}
-        >
-          <span style={{ color: 'var(--red)' }}>Driver</span> Standings
-        </div>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1.2fr 1fr',
-            gap: 8,
-            alignItems: 'stretch',
-          }}
-        >
-          {[driverStandings[1], driverStandings[0], driverStandings[2]].map((standing, colIdx) => {
-            if (!standing) return <div key={colIdx} />;
-            const driver = standing.drivers;
-            const isCenter = colIdx === 1;
-            const team =
-              teams.find((t) => t.id === standing.team_id || t.id === driver?.team_id || t.name === standing.teams?.name) ||
-              standing.teams ||
-              null;
-            const teamColor = team?.team_color || '#ffffff';
-            const pos = colIdx === 0 ? 2 : colIdx === 1 ? 1 : 3;
-
-            return (
-              <div
-                key={standing.id}
-                onClick={() => onOpenDriver?.(driver?.id)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') onOpenDriver?.(driver?.id);
-                }}
-                style={{
-                  position: 'relative',
-                  borderRadius: 14,
-                  overflow: 'hidden',
-                  cursor: 'pointer',
-                  minHeight: isCenter ? 200 : 170,
-                  background: '#111',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                }}
-              >
-                {driver?.image_url ? (
-                  <img
-                    src={driver.image_url}
-                    alt=""
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      objectPosition: 'top center',
-                    }}
-                    onError={(e) => (e.currentTarget.style.display = 'none')}
-                  />
-                ) : (
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontFamily: 'var(--mono)', fontWeight: 800, fontSize: 36, color: 'rgba(255,255,255,0.08)' }}>
-                      {driver?.code || '?'}
-                    </span>
-                  </div>
-                )}
-
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: `linear-gradient(
-                      to bottom,
-                      transparent 0%,
-                      transparent 30%,
-                      rgba(0,0,0,0.5) 55%,
-                      rgba(0,0,0,0.85) 80%,
-                      #000 100%
-                    )`,
-                  }}
-                  aria-hidden="true"
-                />
-
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 3,
-                    background: teamColor,
-                    opacity: 0.8,
-                  }}
-                  aria-hidden="true"
-                />
-
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 10,
-                    left: 10,
-                    fontFamily: 'var(--mono)',
-                    fontWeight: 800,
-                    fontSize: 13,
-                    color: 'rgba(255,255,255,0.5)',
-                  }}
-                >
-                  P{pos}
-                </div>
-
-                <div style={{ position: 'relative', zIndex: 2, padding: '10px 10px 12px' }}>
-                  <div style={{ fontFamily: 'var(--sans)', fontWeight: 400, fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.1 }}>
-                    {driver?.first_name}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: 'var(--sans)',
-                      fontWeight: 800,
-                      fontSize: isCenter ? 14 : 12,
-                      color: '#fff',
-                      lineHeight: 1.1,
-                      letterSpacing: '-0.01em',
-                      marginBottom: 6,
-                    }}
-                  >
-                    {driver?.last_name}
-                  </div>
-
-                  {team?.logo_url ? (
-                    <img
-                      src={team.logo_url}
-                      alt=""
-                      style={{ width: 20, height: 20, objectFit: 'contain', display: 'block' }}
-                      onError={(e) => (e.currentTarget.style.display = 'none')}
-                    />
-                  ) : null}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <button
-            onClick={() => handleSetTab('standings')}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontFamily: 'var(--sans)',
-              fontWeight: 700,
-              fontSize: 14,
-              color: 'var(--red)',
-            }}
-            type="button"
-          >
-            View All
-          </button>
-        </div>
-      </section>
-
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 20px' }} />
-
-      <section style={{ padding: '8px 20px 28px', background: '#000' }}>
-        <div
-          style={{
-            fontFamily: 'var(--sans)',
-            fontWeight: 800,
-            fontSize: 22,
-            letterSpacing: '-0.01em',
-            marginBottom: 16,
-            color: 'var(--text)',
-          }}
-        >
-          <span style={{ color: 'var(--red)' }}>Team</span> Standings
-        </div>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1.2fr 1fr',
-            gap: 8,
-            alignItems: 'stretch',
-          }}
-        >
-          {[constructorStandings[1], constructorStandings[0], constructorStandings[2]].map((standing, colIdx) => {
-            if (!standing) return <div key={colIdx} />;
-            const team = standing.teams;
-            const isCenter = colIdx === 1;
-            const teamColor = team?.team_color || '#ffffff';
-            const pos = colIdx === 0 ? 2 : colIdx === 1 ? 1 : 3;
-
-            return (
-              <div
-                key={standing.id}
-                onClick={() => handleSetTab('constructors')}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') handleSetTab('constructors');
-                }}
-                style={{
-                  position: 'relative',
-                  borderRadius: 14,
-                  overflow: 'hidden',
-                  cursor: 'pointer',
-                  minHeight: isCenter ? 200 : 170,
-                  background: `color-mix(in srgb, ${teamColor} 8%, #111 92%)`,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                }}
-              >
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -60%)',
-                    width: '70%',
-                    height: '55%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {team?.logo_url ? (
-                    <img
-                      src={team.logo_url}
-                      alt=""
-                      style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', opacity: 0.9 }}
-                      onError={(e) => (e.currentTarget.style.display = 'none')}
-                    />
-                  ) : null}
-                </div>
-
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: `linear-gradient(
-                      to bottom,
-                      transparent 0%,
-                      transparent 40%,
-                      rgba(0,0,0,0.6) 65%,
-                      rgba(0,0,0,0.92) 85%,
-                      #000 100%
-                    )`,
-                  }}
-                  aria-hidden="true"
-                />
-
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 3,
-                    background: teamColor,
-                    opacity: 0.9,
-                  }}
-                  aria-hidden="true"
-                />
-
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 10,
-                    left: 10,
-                    fontFamily: 'var(--mono)',
-                    fontWeight: 800,
-                    fontSize: 13,
-                    color: 'rgba(255,255,255,0.4)',
-                  }}
-                >
-                  P{pos}
-                </div>
-
-                <div style={{ position: 'relative', zIndex: 2, padding: '10px 10px 12px', textAlign: 'center' }}>
-                  <div
-                    style={{
-                      fontFamily: 'var(--sans)',
-                      fontWeight: 800,
-                      fontSize: isCenter ? 15 : 13,
-                      color: '#fff',
-                      letterSpacing: '-0.01em',
-                      marginBottom: 4,
-                    }}
-                  >
-                    {team?.name}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: 'var(--sans)',
-                      fontWeight: 900,
-                      fontSize: isCenter ? 22 : 18,
-                      color: '#fff',
-                      letterSpacing: '-0.02em',
-                    }}
-                  >
-                    {standing.points}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <button
-            onClick={() => handleSetTab('constructors')}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontFamily: 'var(--sans)',
-              fontWeight: 700,
-              fontSize: 14,
-              color: 'var(--red)',
-            }}
-            type="button"
-          >
-            View All
-          </button>
-        </div>
-      </section>
+        );
+      })}
     </div>
   );
 }
 
+// ── Upcoming Hero ─────────────────────────────────────────────────────────────
+function UpcomingHero({ race, handleSetTab }) {
+  const cd = useCountdown(race.date);
+  const accentColor = '#e8002d';
+
+  const d = new Date(race.date);
+  const dayEnd   = d.getDate();
+  const dayStart = dayEnd - 2;
+  const month    = d.toLocaleDateString('en-GB', { month: 'short' });
+  const dateRange = `${dayStart} – ${dayEnd} ${month}`;
+
+  return (
+    <div style={{
+      margin: '0 16px',
+      background: 'linear-gradient(135deg, #1a0a0a 0%, #0d0d0d 100%)',
+      borderRadius: 16, padding: '20px', position: 'relative',
+      overflow: 'hidden', minHeight: 240,
+    }}>
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 0,
+        background: 'radial-gradient(ellipse at 80% 50%, rgba(180,0,0,0.25) 0%, transparent 60%)',
+      }} />
+
+      {race.circuits?.layout_url && (
+        <img src={race.circuits.layout_url} alt=""
+          style={{
+            position: 'absolute', right: -10, top: '50%',
+            transform: 'translateY(-50%)',
+            height: 160, width: 'auto', objectFit: 'contain',
+            zIndex: 1, opacity: 0.9,
+          }}
+          onError={e => e.target.style.display = 'none'}
+        />
+      )}
+
+      <div style={{ position: 'relative', zIndex: 2, maxWidth: '60%' }}>
+        <div style={{
+          fontFamily: 'var(--sans)', fontWeight: 600,
+          fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 4,
+        }}>
+          Round {String(race.round).padStart(2, '0')}
+        </div>
+
+        <div style={{
+          fontFamily: 'var(--sans)', fontWeight: 900,
+          fontSize: 24, color: '#fff',
+          letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: 4,
+        }}>
+          {race.name?.replace('Grand Prix', 'GP')}
+        </div>
+
+        <div style={{
+          fontFamily: 'var(--sans)', fontWeight: 600,
+          fontSize: 13, color: accentColor, marginBottom: 4,
+        }}>
+          {race.circuits?.locality || race.circuits?.name?.split(' ')[0] || '—'}
+        </div>
+
+        <div style={{
+          fontFamily: 'var(--sans)', fontWeight: 500,
+          fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 18,
+        }}>
+          {dateRange}
+        </div>
+
+        <div style={{
+          fontFamily: 'var(--sans)', fontWeight: 500,
+          fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 8,
+        }}>
+          Race starts in
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14 }}>
+          {[[cd.days, 'Days'], [cd.hrs, 'Hours'], [cd.min, 'Mins']].map(([val, label]) => (
+            <div key={label}>
+              <div style={{
+                fontFamily: 'var(--sans)', fontWeight: 900,
+                fontSize: 32, color: accentColor,
+                letterSpacing: '-0.03em', lineHeight: 1,
+              }}>
+                {String(val).padStart(2, '0')}
+              </div>
+              <div style={{
+                fontFamily: 'var(--sans)', fontWeight: 400,
+                fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 3,
+              }}>
+                {label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <button onClick={() => handleSetTab?.('races')} style={{
+        position: 'absolute', bottom: 18, right: 18, zIndex: 3,
+        display: 'flex', alignItems: 'center', gap: 7,
+        background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)',
+        border: 'none', borderRadius: 980, padding: '8px 14px',
+        cursor: 'pointer', fontFamily: 'var(--sans)', fontWeight: 600,
+        fontSize: 13, color: '#fff',
+      }}>
+        <span style={{
+          width: 20, height: 20, borderRadius: '50%',
+          background: 'rgba(255,255,255,0.15)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11,
+        }}>→</span>
+        Schedule
+      </button>
+    </div>
+  );
+}
+
+// ── Past Hero ─────────────────────────────────────────────────────────────────
+function PastHero({ race, teams, onViewResults }) {
+  const [topThree, setTopThree] = useState([]);
+
+  useEffect(() => {
+    if (!race?.id) return;
+    db.race_results.listByRace(race.id).then(({ data }) => {
+      setTopThree(
+        (data || []).filter(r => r.position && r.position <= 3).sort((a, b) => a.position - b.position)
+      );
+    });
+  }, [race?.id]);
+
+  return (
+    <div style={{
+      margin: '0 16px', background: '#111', borderRadius: 16,
+      padding: '20px', position: 'relative', overflow: 'hidden', minHeight: 180,
+    }}>
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 0,
+        background: 'radial-gradient(ellipse at 80% 40%, rgba(80,80,80,0.15) 0%, transparent 60%)',
+      }} />
+
+      {race.circuits?.layout_url && (
+        <img src={race.circuits.layout_url} alt=""
+          style={{
+            position: 'absolute', right: -10, top: '50%',
+            transform: 'translateY(-50%)',
+            height: 140, width: 'auto', objectFit: 'contain',
+            zIndex: 1, opacity: 0.5,
+            filter: 'brightness(0) invert(1)',
+          }}
+          onError={e => e.target.style.display = 'none'}
+        />
+      )}
+
+      <div style={{ position: 'relative', zIndex: 2, maxWidth: '65%' }}>
+        <div style={{
+          fontFamily: 'var(--sans)', fontWeight: 600,
+          fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 4,
+        }}>
+          Round {String(race.round).padStart(2, '0')}
+        </div>
+
+        <div style={{
+          fontFamily: 'var(--sans)', fontWeight: 900,
+          fontSize: 24, color: '#fff',
+          letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: 4,
+        }}>
+          {race.name?.replace('Grand Prix', 'GP')}
+        </div>
+
+        <div style={{
+          fontFamily: 'var(--sans)', fontWeight: 500,
+          fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 14,
+        }}>
+          {race.circuits?.locality || '—'}
+        </div>
+
+        <PodiumStrips topThree={topThree} teams={teams} />
+
+        <button onClick={() => onViewResults?.(race.id)} style={{
+          display: 'flex', alignItems: 'center', gap: 7, marginTop: 14,
+          background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)',
+          border: 'none', borderRadius: 980, padding: '8px 14px',
+          cursor: 'pointer', fontFamily: 'var(--sans)', fontWeight: 600,
+          fontSize: 13, color: '#fff',
+        }}>
+          <span style={{
+            width: 20, height: 20, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.15)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11,
+          }}>→</span>
+          Results
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Upcoming Race Row ─────────────────────────────────────────────────────────
+function UpcomingRaceRow({ race, isLast, onClick }) {
+  const d   = new Date(race.date);
+  const day = d.getDate();
+  const mon = d.toLocaleDateString('en-GB', { month: 'short' });
+
+  return (
+    <div onClick={onClick} style={{
+      display: 'grid', gridTemplateColumns: '44px 1fr auto 22px',
+      alignItems: 'center', padding: '12px 20px', gap: 12,
+      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.07)',
+      cursor: 'pointer', transition: 'background 0.1s',
+    }}
+      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+    >
+      <div>
+        <div style={{
+          fontFamily: 'var(--sans)', fontWeight: 800,
+          fontSize: 18, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em',
+        }}>
+          {String(day).padStart(2, '0')}
+        </div>
+        <div style={{
+          fontFamily: 'var(--sans)', fontWeight: 500,
+          fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2,
+        }}>
+          {mon}
+        </div>
+      </div>
+
+      <div>
+        <div style={{
+          fontFamily: 'var(--sans)', fontWeight: 700,
+          fontSize: 14, color: '#fff', letterSpacing: '-0.01em', marginBottom: 2,
+        }}>
+          {race.name?.replace('Grand Prix', 'GP')}
+        </div>
+        <div style={{
+          fontFamily: 'var(--sans)', fontWeight: 500,
+          fontSize: 11, color: 'rgba(255,255,255,0.4)',
+        }}>
+          R{String(race.round).padStart(2, '0')} · {race.circuits?.locality || race.circuits?.country || '—'}
+        </div>
+      </div>
+
+      <div style={{ width: 56, height: 36, flexShrink: 0 }}>
+        {race.circuits?.layout_url && (
+          <img src={race.circuits.layout_url} alt=""
+            style={{
+              width: '100%', height: '100%', objectFit: 'contain',
+              filter: 'brightness(0) invert(1) opacity(0.45)',
+            }}
+            onError={e => e.target.style.display = 'none'}
+          />
+        )}
+      </div>
+
+      <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 14 }}>›</span>
+    </div>
+  );
+}
+
+// ── Past Race Row ─────────────────────────────────────────────────────────────
+function PastRaceRow({ race, teams, isLast, onClick }) {
+  const [topThree, setTopThree] = useState([]);
+
+  useEffect(() => {
+    if (!race?.id) return;
+    db.race_results.listByRace(race.id).then(({ data }) => {
+      setTopThree(
+        (data || []).filter(r => r.position && r.position <= 3).sort((a, b) => a.position - b.position)
+      );
+    });
+  }, [race?.id]);
+
+  return (
+    <div onClick={onClick} style={{
+      display: 'grid', gridTemplateColumns: '60px 1fr 22px',
+      alignItems: 'center', padding: '12px 20px', gap: 12,
+      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.07)',
+      cursor: 'pointer', transition: 'background 0.1s',
+    }}
+      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+    >
+      <div style={{ width: 52, height: 40, flexShrink: 0 }}>
+        {race.circuits?.layout_url ? (
+          <img src={race.circuits.layout_url} alt=""
+            style={{
+              width: '100%', height: '100%', objectFit: 'contain',
+              filter: 'brightness(0) invert(1) opacity(0.25)',
+            }}
+            onError={e => e.target.style.display = 'none'}
+          />
+        ) : (
+          <div style={{ width: '100%', height: '100%', borderRadius: 6, background: 'rgba(255,255,255,0.04)' }} />
+        )}
+      </div>
+
+      <div>
+        <div style={{
+          fontFamily: 'var(--sans)', fontWeight: 700,
+          fontSize: 14, color: '#fff', letterSpacing: '-0.01em', marginBottom: 2,
+        }}>
+          {race.name?.replace('Grand Prix', 'GP')}
+        </div>
+        <div style={{
+          fontFamily: 'var(--sans)', fontWeight: 500,
+          fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6,
+        }}>
+          R{String(race.round).padStart(2, '0')} · {race.circuits?.locality || '—'}
+        </div>
+        <PodiumStrips topThree={topThree} teams={teams} />
+      </div>
+
+      <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 14 }}>›</span>
+    </div>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
+export default function Dashboard({ setTab, races = [], seasons = [], teams = [], drivers = [], onOpenRaceResult }) {
+  const [scheduleTab, setScheduleTab] = useState('upcoming');
+
+  const today = new Date();
+  const upcoming = [...races]
+    .filter(r => r.date && new Date(r.date) >= today)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  const past = [...races]
+    .filter(r => r.date && new Date(r.date) < today)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const featured  = scheduleTab === 'upcoming' ? upcoming[0]    : past[0];
+  const listRaces = scheduleTab === 'upcoming' ? upcoming.slice(1) : past.slice(1);
+
+  return (
+    <div style={{ background: '#000', minHeight: '100vh', paddingBottom: 100 }}>
+
+      {/* Title */}
+      <div style={{ padding: '16px 20px 12px', textAlign: 'center' }}>
+        <h1 style={{
+          fontFamily: 'var(--sans)', fontWeight: 500,
+          fontSize: 18, color: '#fff', letterSpacing: '-0.01em', margin: 0,
+        }}>
+          Schedule
+        </h1>
+      </div>
+
+      {/* Pill toggle */}
+      <div style={{
+        display: 'flex', margin: '0 16px 16px',
+        background: '#1a1a1a', borderRadius: 980, padding: 3,
+      }}>
+        {[{ id: 'upcoming', label: 'Upcoming' }, { id: 'past', label: 'Past' }].map(({ id, label }) => {
+          const isActive = scheduleTab === id;
+          return (
+            <button key={id} onClick={() => setScheduleTab(id)} style={{
+              flex: 1, padding: '8px 0', borderRadius: 980,
+              border: 'none', cursor: 'pointer',
+              fontFamily: 'var(--sans)', fontWeight: 600,
+              fontSize: 13, letterSpacing: '-0.01em',
+              background: isActive ? '#ffffff' : 'transparent',
+              color: isActive ? '#000' : 'rgba(255,255,255,0.4)',
+              transition: 'all 0.2s cubic-bezier(0.34,1.56,0.64,1)',
+            }}>
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Featured hero */}
+      {featured && (
+        scheduleTab === 'upcoming'
+          ? <UpcomingHero race={featured} teams={teams} handleSetTab={setTab} />
+          : <PastHero race={featured} teams={teams} onViewResults={onOpenRaceResult} />
+      )}
+
+      {/* List */}
+      {listRaces.length > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <div style={{
+            padding: '0 20px 10px',
+            fontFamily: 'var(--sans)', fontWeight: 700,
+            fontSize: 15, color: '#fff', letterSpacing: '-0.01em',
+          }}>
+            {scheduleTab === 'upcoming' ? 'Upcoming Races' : 'Past Races'}
+          </div>
+
+          {scheduleTab === 'upcoming'
+            ? listRaces.map((race, i) => (
+                <UpcomingRaceRow
+                  key={race.id} race={race} teams={teams}
+                  isLast={i === listRaces.length - 1}
+                  onClick={() => setTab?.('races')}
+                />
+              ))
+            : listRaces.map((race, i) => (
+                <PastRaceRow
+                  key={race.id} race={race} teams={teams}
+                  isLast={i === listRaces.length - 1}
+                  onClick={() => onOpenRaceResult?.(race.id)}
+                />
+              ))
+          }
+        </div>
+      )}
+
+      {!featured && !listRaces.length && (
+        <div style={{
+          textAlign: 'center', padding: '60px 20px',
+          fontFamily: 'var(--sans)', fontSize: 13, color: 'rgba(255,255,255,0.3)',
+        }}>
+          No {scheduleTab} races
+        </div>
+      )}
+    </div>
+  );
+}

@@ -19,6 +19,11 @@ export default function DriversPage({ teams, detailId, onOpenDriver, onOpenTeam,
           driverId={detailId}
           mode="page"
           onClose={onCloseDetail}
+          onEdit={isAdmin ? () => {
+            const driver = C.allRows.find(d => String(d.id) === String(detailId));
+            if (driver) C.openEdit(driver);
+          } : undefined}
+          onDelete={isAdmin ? async (id) => { await C.remove(id); onCloseDetail?.(); } : undefined}
           onOpenTeamDetail={onOpenTeam}
           onOpenRace={onOpenRace}
         />

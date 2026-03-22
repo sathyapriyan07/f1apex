@@ -23,7 +23,7 @@ function SectionLabel({ children }) {
   );
 }
 
-function DriverHero({ driver, team, teamColor, onClose, previousTeams, onOpenTeam }) {
+function DriverHero({ driver, team, teamColor, onClose, previousTeams, onOpenTeam, onEdit, onDelete }) {
   return (
     <div style={{ background: '#000', position: 'relative', paddingTop: 0 }}>
       <button onClick={onClose} style={{
@@ -31,6 +31,24 @@ function DriverHero({ driver, team, teamColor, onClose, previousTeams, onOpenTea
         background: 'none', border: 'none', cursor: 'pointer',
         color: '#fff', fontSize: 22, padding: '4px 8px',
       }}>←</button>
+      {(onEdit || onDelete) && (
+        <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 10, display: 'flex', gap: 6 }}>
+          {onEdit && (
+            <button onClick={onEdit} type="button" style={{
+              fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 12,
+              color: '#fff', background: 'rgba(255,255,255,0.12)',
+              border: 'none', borderRadius: 8, padding: '6px 12px', cursor: 'pointer',
+            }}>Edit</button>
+          )}
+          {onDelete && (
+            <button onClick={onDelete} type="button" style={{
+              fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 12,
+              color: '#fff', background: 'rgba(232,0,45,0.25)',
+              border: 'none', borderRadius: 8, padding: '6px 12px', cursor: 'pointer',
+            }}>Delete</button>
+          )}
+        </div>
+      )}
 
       {/* Driver photo */}
       <div style={{
@@ -593,7 +611,7 @@ function ResultsSection({ results, teamColor, onOpenRace }) {
   );
 }
 
-export default function DriverDetailPanel({ driverId, onClose, onOpenTeamDetail, onOpenRace, mode = 'panel' }) {
+export default function DriverDetailPanel({ driverId, onClose, onEdit, onDelete, onOpenTeamDetail, onOpenRace, mode = 'panel' }) {
   const [driver, setDriver] = useState(null);
   const [results, setResults] = useState([]);
   const [standings, setStandings] = useState([]);
@@ -664,6 +682,7 @@ export default function DriverDetailPanel({ driverId, onClose, onOpenTeamDetail,
   }, [results, driver?.team_id]);
 
   void onOpenTeamDetail;
+  void onEdit;
 
   if (!driverId) return null;
 
@@ -700,6 +719,12 @@ export default function DriverDetailPanel({ driverId, onClose, onOpenTeamDetail,
         teamColor={teamColor} onClose={onClose}
         previousTeams={previousTeams}
         onOpenTeam={onOpenTeamDetail}
+        onEdit={onEdit}
+        onDelete={onDelete ? async () => {
+          if (!confirm(`Delete ${driver.first_name} ${driver.last_name}?`)) return;
+          await onDelete(driver.id);
+          onClose?.();
+        } : undefined}
       />
       <CareerStatsSection results={results} standings={standings} />
       <SeasonStatsSection

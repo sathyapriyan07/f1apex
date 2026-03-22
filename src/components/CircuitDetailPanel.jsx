@@ -94,7 +94,7 @@ function DriverAppearancesRow({ record, index }) {
   );
 }
 
-export default function CircuitDetailPanel({ circuitId, onClose, onEdit, mode = 'panel' }) {
+export default function CircuitDetailPanel({ circuitId, onClose, onEdit, onDelete, mode = 'panel' }) {
   const { isAdmin } = useAuth();
   const [tab, setTab] = useState('history');
   const [circuit, setCircuit] = useState(null);
@@ -206,9 +206,21 @@ export default function CircuitDetailPanel({ circuitId, onClose, onEdit, mode = 
               {title}
             </div>
             {isAdmin && circuit ? (
-              <button type="button" className="detail-tv__edit" onClick={() => onEdit?.(circuit)}>
-                Edit Circuit
-              </button>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button type="button" className="detail-tv__edit" onClick={() => onEdit?.(circuit)}>
+                  Edit Circuit
+                </button>
+                {onDelete && (
+                  <button type="button" className="detail-tv__edit" style={{ background: 'rgba(232,0,45,0.2)', color: '#ff4d6d' }}
+                    onClick={async () => {
+                      if (!confirm(`Delete ${circuit.name}?`)) return;
+                      await onDelete(circuit.id);
+                      onClose?.();
+                    }}>
+                    Delete
+                  </button>
+                )}
+              </div>
             ) : (
               <div />
             )}
@@ -229,9 +241,21 @@ export default function CircuitDetailPanel({ circuitId, onClose, onEdit, mode = 
                   ← Back
                 </button>
                 {isAdmin ? (
-                  <button type="button" className="detail-tv__edit" onClick={() => onEdit?.(circuit)}>
-                    Edit Circuit
-                  </button>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button type="button" className="detail-tv__edit" onClick={() => onEdit?.(circuit)}>
+                      Edit Circuit
+                    </button>
+                    {onDelete && (
+                      <button type="button" className="detail-tv__edit" style={{ background: 'rgba(232,0,45,0.2)', color: '#ff4d6d' }}
+                        onClick={async () => {
+                          if (!confirm(`Delete ${circuit.name}?`)) return;
+                          await onDelete(circuit.id);
+                          onClose?.();
+                        }}>
+                        Delete
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   <div />
                 )}

@@ -297,6 +297,7 @@ export function CircuitsPage({ detailId, onOpenCircuit, onCloseDetail } = {}) {
           mode="page"
           onClose={onCloseDetail}
           onEdit={(circuit) => C.openEdit(circuit)}
+          onDelete={isAdmin ? async (id) => { await C.remove(id); onCloseDetail?.(); } : undefined}
         />
 
         {C.modal && (
