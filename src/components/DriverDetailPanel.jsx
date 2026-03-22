@@ -443,7 +443,7 @@ const posColor = (pos, teamColor) => {
   return 'rgba(255,255,255,0.4)';
 };
 
-function ResultList({ rows, teamColor }) {
+function ResultList({ rows, teamColor, onOpenRace }) {
   if (rows.length === 0) {
     return (
       <div style={{
@@ -454,12 +454,18 @@ function ResultList({ rows, teamColor }) {
   }
   return rows.map((r, i) => {
     const pts = parseFloat(r.points || 0);
+    const isSprint = Boolean(r.races?.sprint);
     return (
-      <div key={r.id || i} style={{
-        display: 'grid', gridTemplateColumns: '44px 1fr auto',
-        alignItems: 'center', gap: '0 12px', padding: '12px 18px',
-        borderBottom: i < rows.length - 1 ? '1px solid rgba(255,255,255,0.07)' : 'none',
-      }}>
+      <div
+        key={r.id || i}
+        onClick={() => onOpenRace?.(r.race_id)}
+        style={{
+          display: 'grid', gridTemplateColumns: '44px 1fr auto',
+          alignItems: 'center', gap: '0 12px', padding: '12px 18px',
+          borderBottom: i < rows.length - 1 ? '1px solid rgba(255,255,255,0.07)' : 'none',
+          cursor: onOpenRace ? 'pointer' : 'default',
+        }}
+      >
         <div style={{
           fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 20,
           color: r.position ? posColor(r.position, teamColor) : 'rgba(255,255,255,0.25)',
@@ -468,22 +474,36 @@ function ResultList({ rows, teamColor }) {
           {r.position ? `P${r.position}` : r.status?.slice(0, 3).toUpperCase() || '—'}
         </div>
         <div>
-          <div style={{ fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 13, color: '#fff' }}>
-            {r.races?.name || '—'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 13, color: '#fff' }}>
+              {r.races?.name || '—'}
+            </span>
+            {isSprint && (
+              <span style={{
+                fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700,
+                color: '#ffd60a', background: 'rgba(255,214,10,0.12)',
+                borderRadius: 4, padding: '2px 5px', letterSpacing: '0.04em',
+              }}>SPRINT</span>
+            )}
           </div>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
             R{r.races?.round}{r.races?.circuits?.country ? ` · ${r.races.circuits.country}` : ''}
           </div>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{
-            fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 16,
-            color: pts > 0 ? '#fff' : 'rgba(255,255,255,0.25)', letterSpacing: '-0.02em',
-          }}>{pts > 0 ? `${pts}pt` : '—'}</div>
-          {r.grid_position != null && (
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>
-              Grid {r.grid_position}
-            </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{
+              fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 16,
+              color: pts > 0 ? '#fff' : 'rgba(255,255,255,0.25)', letterSpacing: '-0.02em',
+            }}>{pts > 0 ? `${pts}pt` : '—'}</div>
+            {r.grid_position != null && (
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>
+                Grid {r.grid_position}
+              </div>
+            )}
+          </div>
+          {onOpenRace && (
+            <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 14, lineHeight: 1 }}>›</span>
           )}
         </div>
       </div>
@@ -491,26 +511,35 @@ function ResultList({ rows, teamColor }) {
   });
 }
 
-function ResultsSection({ results, teamColor }) {
+function ResultsSection({ results, teamColor, onOpenRace }) {
   const years = useMemo(() => {
     const s = new Set(results.map(r => Number(r.races?.season_year)).filter(Boolean));
     return [...s].sort((a, b) => b - a);
   }, [results]);
 
   const [year, setYear] = useState(() => years[0] ?? new Date().getFullYear());
-  const [tab, setTab] = useState('race');
+  const [tab, setTab] = useState('all');
 
-  // Reset tab when year changes
-  useEffect(() => { setTab('race'); }, [year]);
-  // Keep year in sync if results load after mount
+  useEffect(() => { setTab('all'); }, [year]);
   useEffect(() => { if (years.length) setYear(years[0]); }, [years[0]]); // eslint-disable-line
 
-  const sort = (arr) => [...arr].sort((a, b) => (a.races?.round || 0) - (b.races?.round || 0));
-
   const yearResults = results.filter(r => Number(r.races?.season_year) === year);
-  const raceRows = sort(yearResults.filter(r => !r.races?.sprint));
-  const sprintRows = sort(yearResults.filter(r => Boolean(r.races?.sprint)));
+
+  // Group by race_id so Chinese GP sprint + race appear as separate entries
+  // but sorted: within same round, sprint comes before race
+  const sorted = [...yearResults].sort((a, b) => {
+    const rd = (a.races?.round || 0) - (b.races?.round || 0);
+    if (rd !== 0) return rd;
+    // sprint first within same round
+    return (b.races?.sprint ? 1 : 0) - (a.races?.sprint ? 1 : 0);
+  });
+
+  const raceRows = sorted.filter(r => !r.races?.sprint);
+  const sprintRows = sorted.filter(r => Boolean(r.races?.sprint));
+  const allRows = sorted;
   const hasSprints = sprintRows.length > 0;
+
+  const activeRows = tab === 'race' ? raceRows : tab === 'sprint' ? sprintRows : allRows;
 
   const tabStyle = (active) => ({
     fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 13,
@@ -522,11 +551,9 @@ function ResultsSection({ results, teamColor }) {
 
   return (
     <div style={{ padding: '28px 16px 0' }}>
-      {/* Header row: label + controls */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, gap: 10 }}>
         <SectionLabel>RESULTS</SectionLabel>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* Year dropdown */}
           <select
             value={year}
             onChange={e => setYear(Number(e.target.value))}
@@ -541,24 +568,23 @@ function ResultsSection({ results, teamColor }) {
           >
             {years.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-          {/* Race / Sprint tabs — only when sprints exist for selected year */}
           {hasSprints && (
             <div style={{ display: 'flex', gap: 4, background: '#1a1a1a', borderRadius: 10, padding: 4 }}>
+              <button style={tabStyle(tab === 'all')} onClick={() => setTab('all')}>All</button>
               <button style={tabStyle(tab === 'race')} onClick={() => setTab('race')}>Race</button>
               <button style={tabStyle(tab === 'sprint')} onClick={() => setTab('sprint')}>Sprint</button>
             </div>
           )}
         </div>
       </div>
-
       <div style={{ background: '#1a1a1a', borderRadius: 16, overflow: 'hidden' }}>
-        <ResultList rows={tab === 'race' ? raceRows : sprintRows} teamColor={teamColor} />
+        <ResultList rows={activeRows} teamColor={teamColor} onOpenRace={onOpenRace} />
       </div>
     </div>
   );
 }
 
-export default function DriverDetailPanel({ driverId, onClose, onOpenTeamDetail, mode = 'panel' }) {
+export default function DriverDetailPanel({ driverId, onClose, onOpenTeamDetail, onOpenRace, mode = 'panel' }) {
   const [driver, setDriver] = useState(null);
   const [results, setResults] = useState([]);
   const [standings, setStandings] = useState([]);
@@ -672,7 +698,7 @@ export default function DriverDetailPanel({ driverId, onClose, onOpenTeamDetail,
       />
       <PerformanceCharts results={results} teamColor={teamColor} />
       <ChampionshipsSection standings={standings} teamColor={teamColor} />
-      <ResultsSection results={results} teamColor={teamColor} />
+      <ResultsSection results={results} teamColor={teamColor} onOpenRace={onOpenRace} />
       <div style={{ height: 40 }} />
     </div>
   );

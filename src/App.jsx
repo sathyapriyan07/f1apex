@@ -269,6 +269,7 @@ function AppShell({ onOpenAuth }) {
           detailId={detail?.type === 'driver' ? detail.id : null}
           onOpenDriver={openDriver}
           onOpenTeam={openTeam}
+          onOpenRace={openRace}
           onCloseDetail={handleCloseDetail}
         />
       );

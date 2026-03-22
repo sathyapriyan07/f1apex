@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import Modal from '../components/Modal';
 import DriverDetailPanel from '../components/DriverDetailPanel';
 
-export default function DriversPage({ teams, detailId, onOpenDriver, onOpenTeam, onCloseDetail }) {
+export default function DriversPage({ teams, detailId, onOpenDriver, onOpenTeam, onOpenRace, onCloseDetail }) {
   const { isAdmin } = useAuth();
   const C = useCRUD(db.drivers);
   const [view, setView] = useState('grid'); // 'grid' | 'list'
@@ -20,7 +20,7 @@ export default function DriversPage({ teams, detailId, onOpenDriver, onOpenTeam,
           mode="page"
           onClose={onCloseDetail}
           onOpenTeamDetail={onOpenTeam}
-          onEdit={(driver) => C.openEdit(driver)}
+          onOpenRace={onOpenRace}
         />
 
         {C.modal && (
