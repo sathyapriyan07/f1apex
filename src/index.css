@@ -223,7 +223,7 @@ body.hide-mobile-header .mobile-header { display: none !important; }
 body.hide-mobile-header .app-header { display: none !important; }
 body.hide-mobile-header .app-main { padding-top: 0 !important; }
 .app-header__bar {
-  height: 48px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -241,7 +241,7 @@ body.hide-mobile-header .app-main { padding-top: 0 !important; }
   gap: 2px;
   font-weight: 900;
   letter-spacing: -.02em;
-  font-size: 17px;
+  font-size: 15px;
   font-style: italic;
 }
 .brand__mark .f1 { color: var(--red); }
@@ -985,8 +985,8 @@ html.theme-light .success-msg {
   .app-header { display: none; }
   .app-main { padding-top: 0; padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
   .top-nav { padding: 0 16px !important; }
-  .app-header { height: 44px; }
-  .app-header__bar { height: 44px; padding: 0 16px; }
+  .app-header { height: 40px; }
+  .app-header__bar { height: 40px; padding: 0 16px; }
   .theme-toggle-label { display: none; }
   .user-meta { display: none; }
   .sign-out-btn { display: none; }

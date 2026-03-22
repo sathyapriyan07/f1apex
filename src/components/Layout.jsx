@@ -50,7 +50,7 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
         style={{
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '12px 20px',
+          padding: '9px 16px',
           background: '#000',
           position: 'sticky',
           top: 0,
@@ -61,7 +61,7 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
           style={{
             fontFamily: 'var(--sans)',
             fontWeight: 900,
-            fontSize: 22,
+            fontSize: 17,
             letterSpacing: '-0.02em',
             color: 'var(--text)',
             cursor: 'pointer',
@@ -75,7 +75,7 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
           }}
           aria-label="Go to Home"
         >
-          F1<span style={{ color: 'var(--red)' }}>DB</span>
+          f1<span style={{ color: 'var(--red)', fontStyle: 'italic' }}> APEX</span>
         </span>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -84,14 +84,14 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
               display: 'flex',
               alignItems: 'center',
               gap: 8,
-              background: 'rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.08)',
               borderRadius: 980,
-              padding: '8px 16px',
+              padding: '6px 12px',
               flex: 1,
-              maxWidth: 200,
+              maxWidth: 180,
             }}
           >
-            <Search size={13} color="rgba(255,255,255,0.4)" aria-hidden="true" />
+            <Search size={11} color="rgba(255,255,255,0.35)" aria-hidden="true" />
             <input
               placeholder="Search..."
               aria-label="Search"
@@ -99,7 +99,7 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
                 background: 'none',
                 border: 'none',
                 outline: 'none',
-                fontSize: 13,
+                fontSize: 12,
                 color: 'var(--text)',
                 width: '100%',
                 fontFamily: 'var(--sans)',
@@ -109,8 +109,8 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
 
           <div
             style={{
-              width: 36,
-              height: 36,
+              width: 28,
+              height: 28,
               borderRadius: '50%',
               background: 'var(--red)',
               display: 'flex',
@@ -118,7 +118,7 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
               justifyContent: 'center',
               fontFamily: 'var(--sans)',
               fontWeight: 800,
-              fontSize: 14,
+              fontSize: 11,
               color: '#fff',
               cursor: 'pointer',
             }}
@@ -162,8 +162,8 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
             aria-label="Go to Home"
           >
             <span className="brand__mark" aria-hidden="true">
-              <span className="f1">F1</span>
-              <span className="db">DB</span>
+              <span className="f1">f1</span>
+              <span className="db" style={{ fontStyle: 'italic' }}> APEX</span>
             </span>
           </div>
 
@@ -239,7 +239,7 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mobile-sidebar__top">
-              <div className="mobile-sidebar__brand" role="button" tabIndex={0} onClick={() => handleSetTab('dashboard')}>F1DB</div>
+              <div className="mobile-sidebar__brand" role="button" tabIndex={0} onClick={() => handleSetTab('dashboard')}>f1 <span style={{ color: 'var(--red)', fontStyle: 'italic' }}>APEX</span></div>
               <button type="button" className="mobile-sidebar__close" onClick={() => setMobileNavOpen(false)} aria-label="Close navigation">×</button>
             </div>
             <div className="mobile-sidebar__list" role="navigation" aria-label="Tabs">
