@@ -32,7 +32,7 @@ function Inner() {
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontFamily: 'var(--sans)', fontSize: 36, fontWeight: 900, letterSpacing: 1, marginBottom: 20, textTransform: 'uppercase' }}>
+        <div style={{ fontFamily: 'var(--sans)', fontSize: 28, fontWeight: 900, letterSpacing: '-0.02em', marginBottom: 14 }}>
           <span style={{ color: 'var(--red)' }}>F1</span>DB
         </div>
         <span className="spinner spinner-lg" />

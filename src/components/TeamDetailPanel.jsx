@@ -41,7 +41,7 @@ function Stat({ label, value }) {
       <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
         {label}
       </div>
-      <div style={{ fontFamily: 'var(--sans)', fontSize: 32, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em', lineHeight: 1 }}>
+      <div style={{ fontFamily: 'var(--sans)', fontSize: 18, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em', lineHeight: 1 }}>
         {value ?? '—'}
       </div>
     </div>

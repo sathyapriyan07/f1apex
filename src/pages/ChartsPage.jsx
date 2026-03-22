@@ -54,8 +54,8 @@ export default function ChartsPage({ seasons }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-        <h1 style={{ fontFamily: "'Barlow Condensed'", fontSize: 30, fontWeight: 900, letterSpacing: 1, textTransform: 'uppercase' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+        <h1 style={{ fontFamily: 'var(--sans)', fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em' }}>
           Season <span style={{ color: 'var(--red)' }}>Charts</span>
         </h1>
         <select value={year} onChange={e => setYear(e.target.value)} style={{ minWidth: 120 }}>
@@ -64,7 +64,7 @@ export default function ChartsPage({ seasons }) {
         </select>
       </div>
 
-      {!year && <div className="card" style={{ padding: 48, textAlign: 'center' }}><span style={{ fontSize: 52 }}>📊</span><p style={{ color: 'var(--muted)', marginTop: 12 }}>Select a season to view charts</p></div>}
+      {!year && <div className="card" style={{ padding: 40, textAlign: 'center' }}><span style={{ fontSize: 36 }}>📊</span><p style={{ color: 'var(--muted)', marginTop: 10, fontSize: 12 }}>Select a season to view charts</p></div>}
 
       {year && (loading ? <Loader /> : (
         <>
@@ -156,7 +156,7 @@ function PointsProgressionChart({ raceResults, races, driverStandings }) {
               <polyline points={path} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" />
               {/* End label */}
               <circle cx={x(last.round)} cy={y(last.pts)} r="4" fill={color} />
-              <text x={x(last.round) + 8} y={y(last.pts) + 4} fill={color} fontSize="11" fontFamily="'Barlow Condensed'" fontWeight="700">
+              <text x={x(last.round) + 8} y={y(last.pts) + 4} fill={color} fontSize="10" fontFamily="var(--sans)" fontWeight="700">
                 {d?.drivers?.code || id.slice(0,3).toUpperCase()} {Math.round(last.pts)}
               </text>
             </g>
@@ -187,10 +187,10 @@ function ConstructorPointsChart({ constructorStandings }) {
           const color = COLORS[i % COLORS.length];
           return (
             <g key={s.id}>
-              <text x={PADL - 8} y={yy + BAR_H / 2 + 5} fill="var(--text)" fontSize="13" textAnchor="end" fontFamily="'Barlow Condensed'" fontWeight="700">{s.teams?.name}</text>
+              <text x={PADL - 8} y={yy + BAR_H / 2 + 5} fill="var(--text)" fontSize="11" textAnchor="end" fontFamily="var(--sans)" fontWeight="700">{s.teams?.name}</text>
               <rect x={PADL} y={yy} width={barW} height={BAR_H} fill={color} opacity="0.85" rx="3" />
-              <text x={PADL + barW + 8} y={yy + BAR_H / 2 + 5} fill={color} fontSize="14" fontFamily="'Barlow Condensed'" fontWeight="900">{s.points}</text>
-              {s.wins > 0 && <text x={PADL + barW - 8} y={yy + BAR_H / 2 + 5} fill="rgba(0,0,0,.8)" fontSize="11" textAnchor="end" fontFamily="'Barlow Condensed'" fontWeight="700">{s.wins}W</text>}
+              <text x={PADL + barW + 8} y={yy + BAR_H / 2 + 5} fill={color} fontSize="12" fontFamily="var(--sans)" fontWeight="900">{s.points}</text>
+              {s.wins > 0 && <text x={PADL + barW - 8} y={yy + BAR_H / 2 + 5} fill="rgba(0,0,0,.8)" fontSize="10" textAnchor="end" fontFamily="var(--sans)" fontWeight="700">{s.wins}W</text>}
             </g>
           );
         })}
@@ -241,7 +241,7 @@ function WinsChart({ driverStandings, constructorStandings }) {
                   <title>{s.w.drivers?.last_name}: {s.w.wins} wins</title>
                 </path>
                 {s.sweep > 0.25 && (
-                  <text x={lx} y={ly + 4} fill="rgba(0,0,0,.85)" fontSize="12" textAnchor="middle" fontFamily="'Barlow Condensed'" fontWeight="900">
+                  <text x={lx} y={ly + 4} fill="rgba(0,0,0,.85)" fontSize="10" textAnchor="middle" fontFamily="var(--sans)" fontWeight="900">
                     {s.w.wins}
                   </text>
                 )}
@@ -249,8 +249,8 @@ function WinsChart({ driverStandings, constructorStandings }) {
             );
           })}
           {/* Center */}
-          <text x={CX} y={CY - 8}  fill="var(--text)"  fontSize="32" textAnchor="middle" fontFamily="'Barlow Condensed'" fontWeight="900">{total}</text>
-          <text x={CX} y={CY + 14} fill="var(--muted)" fontSize="11" textAnchor="middle" fontFamily="'Barlow Condensed'" letterSpacing="1">WINS</text>
+          <text x={CX} y={CY - 8}  fill="var(--text)"  fontSize="18" textAnchor="middle" fontFamily="var(--sans)" fontWeight="900">{total}</text>
+          <text x={CX} y={CY + 14} fill="var(--muted)" fontSize="10" textAnchor="middle" fontFamily="var(--sans)" letterSpacing="0.06em">WINS</text>
 
           {/* Legend on right */}
           {slices.map((s, i) => {
@@ -260,10 +260,10 @@ function WinsChart({ driverStandings, constructorStandings }) {
             return (
               <g key={s.w.id}>
                 <rect x={lx} y={ly - 10} width={14} height={14} rx="2" fill={color} />
-                <text x={lx + 22} y={ly + 2} fill="var(--text)" fontSize="12" fontFamily="'Barlow Condensed'" fontWeight="700">
+                <text x={lx + 22} y={ly + 2} fill="var(--text)" fontSize="11" fontFamily="var(--sans)" fontWeight="700">
                   {s.w.drivers?.first_name?.slice(0,1)}. {s.w.drivers?.last_name}
                 </text>
-                <text x={lx + 22} y={ly + 15} fill={color} fontSize="11" fontFamily="'Barlow Condensed'">
+                <text x={lx + 22} y={ly + 15} fill={color} fontSize="10" fontFamily="var(--sans)">
                   {s.w.wins} win{s.w.wins !== 1 ? 's' : ''}
                 </text>
               </g>
@@ -295,8 +295,8 @@ function GridVsFinishChart({ raceResults }) {
         {/* Diagonal reference */}
         <line x1={xP(1)} y1={yP(1)} x2={xP(maxV)} y2={yP(maxV)} stroke="var(--line)" strokeWidth="1.5" strokeDasharray="6,4" />
         {/* Axis labels */}
-        <text x={W / 2} y={H - 8} fill="var(--muted)" fontSize="11" textAnchor="middle" fontFamily="'Barlow Condensed'" letterSpacing="1">GRID POSITION</text>
-        <text x={14} y={H / 2} fill="var(--muted)" fontSize="11" textAnchor="middle" fontFamily="'Barlow Condensed'" letterSpacing="1" transform={`rotate(-90, 14, ${H/2})`}>FINISH POSITION</text>
+        <text x={W / 2} y={H - 8} fill="var(--muted)" fontSize="10" textAnchor="middle" fontFamily="var(--sans)" letterSpacing="0.06em">GRID POSITION</text>
+        <text x={14} y={H / 2} fill="var(--muted)" fontSize="10" textAnchor="middle" fontFamily="var(--sans)" letterSpacing="0.06em" transform={`rotate(-90, 14, ${H/2})`}>FINISH POSITION</text>
         {/* Tick marks */}
         {[1,5,10,15,20].filter(v => v <= maxV).map(v => (
           <g key={v}>
@@ -331,7 +331,7 @@ function GridVsFinishChart({ raceResults }) {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function ChartTitle({ children }) {
-  return <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 16, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 16 }}>{children}</div>;
+  return <div style={{ fontFamily: 'var(--sans)', fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 12 }}>{children}</div>;
 }
 
 function EmptyChart({ msg }) {

@@ -268,8 +268,8 @@ export default function ImportPage({ autoRun = false, autoSource = 'jolpica', au
   };
 
   const ImportRow = ({ label, keyPrefix, onErgast, onJolpica }) => (
-    <div className="import-row" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
-      <span className="import-row__label" style={{ fontSize: 13, color: 'var(--muted)' }}>{label}</span>
+    <div className="import-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+      <span className="import-row__label" style={{ fontSize: 11, color: 'var(--muted)' }}>{label}</span>
       <button className="btn btn-ghost btn-sm" onClick={onErgast} disabled={anyLoading || loading[`${keyPrefix}_ergast`]}>
         {loading[`${keyPrefix}_ergast`] ? <span className="spinner" /> : null} Ergast
       </button>
@@ -283,8 +283,8 @@ export default function ImportPage({ autoRun = false, autoSource = 'jolpica', au
 
   return (
     <div>
-      <div className="import-controls" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
-        <h1 style={{ fontFamily: "'Barlow Condensed'", fontSize: 30, fontWeight: 900, letterSpacing: 1, textTransform: 'uppercase' }}>
+      <div className="import-controls" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+        <h1 style={{ fontFamily: 'var(--sans)', fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em' }}>
           Import <span style={{ color: 'var(--red)' }}>Data</span>
         </h1>
         <div className="import-actions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -347,8 +347,8 @@ export default function ImportPage({ autoRun = false, autoSource = 'jolpica', au
 
 function Panel({ title, children }) {
   return (
-    <div className="card" style={{ padding: 22, marginBottom: 18 }}>
-      <h3 style={{ fontFamily: "'Barlow Condensed'", fontSize: 15, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 16 }}>{title}</h3>
+    <div className="card" style={{ padding: 16, marginBottom: 14 }}>
+      <h3 style={{ fontFamily: 'var(--sans)', fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 12 }}>{title}</h3>
       {children}
     </div>
   );

@@ -183,8 +183,8 @@ export default function LapTimesPage({ races, drivers }) {
   return (
     <div>
       {/* Header */}
-      <div className="laptimes-controls" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-        <h1 style={{ fontFamily: "'Barlow Condensed'", fontSize: 30, fontWeight: 900, letterSpacing: 1, textTransform: 'uppercase' }}>
+      <div className="laptimes-controls" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+        <h1 style={{ fontFamily: 'var(--sans)', fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em' }}>
           Lap <span style={{ color: 'var(--red)' }}>Times</span>
         </h1>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -209,7 +209,7 @@ export default function LapTimesPage({ races, drivers }) {
 
       {error && <div className="error-msg" style={{ marginBottom: 16 }}>{error}</div>}
 
-      {!selectedRaceId && <div className="card" style={{ padding: 48, textAlign: 'center' }}><span style={{ fontSize: 52 }}>⏱</span><p style={{ color: 'var(--muted)', marginTop: 12 }}>Select a race to view lap times</p></div>}
+      {!selectedRaceId && <div className="card" style={{ padding: 40, textAlign: 'center' }}><span style={{ fontSize: 36 }}>⏱</span><p style={{ color: 'var(--muted)', marginTop: 10, fontSize: 12 }}>Select a race to view lap times</p></div>}
 
       {selectedRaceId && (loading ? <Loader /> : allLaps.length === 0
         ? <Empty icon="⏱" label="No lap data. Use 'Import from OpenF1' to fetch telemetry." />
@@ -217,7 +217,7 @@ export default function LapTimesPage({ races, drivers }) {
           <div>
             {/* Driver selector */}
             <div className="card" style={{ padding: 16, marginBottom: 20 }}>
-              <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 10, fontWeight: 700 }}>Select Drivers</div>
+              <div style={{ fontFamily: 'var(--sans)', fontSize: 12, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 10, fontWeight: 700 }}>Select Drivers</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {driverIds.map((id, i) => {
                   const d = driverInfo(id);
@@ -225,7 +225,7 @@ export default function LapTimesPage({ races, drivers }) {
                   const active = filteredDriverIds.includes(id);
                   return (
                     <button key={id} onClick={() => toggleDriver(id)}
-                      style={{ padding: '5px 12px', borderRadius: 4, border: `2px solid ${active ? color : 'var(--line)'}`, background: active ? `${color}22` : 'var(--bg3)', color: active ? color : 'var(--muted)', fontFamily: "'Barlow Condensed'", fontWeight: 700, fontSize: 13, cursor: 'pointer', transition: 'all .15s' }}>
+                      style={{ padding: '5px 12px', borderRadius: 980, border: `1px solid ${active ? color : 'var(--glass-border)'}`, background: active ? `${color}22` : 'var(--glass-bg)', color: active ? color : 'var(--sub)', fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 11, cursor: 'pointer', transition: 'all .2s' }}>
                       {d.code || d.last_name || id.slice(0,6)}
                     </button>
                   );
@@ -277,7 +277,7 @@ function LapTimeChart({ lapsByDriver, filteredDriverIds, driverInfo, maxLap }) {
 
   return (
     <div>
-      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 14, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 10 }}>Lap Time Trace</div>
+      <div style={{ fontFamily: 'var(--sans)', fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 10 }}>Lap Time Trace</div>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto' }}>
         {/* Grid lines */}
         {Array.from({ length: yTicks + 1 }, (_, i) => {
@@ -296,7 +296,7 @@ function LapTimeChart({ lapsByDriver, filteredDriverIds, driverInfo, maxLap }) {
           return <text key={lap} x={x(lap)} y={H - PADB + 14} fill="var(--muted)" fontSize="10" textAnchor="middle">{lap}</text>;
         })}
         {/* Axis label */}
-        <text x={W / 2} y={H - 4} fill="var(--muted)" fontSize="11" textAnchor="middle" fontFamily="'Barlow Condensed'" letterSpacing="1">LAP</text>
+        <text x={W / 2} y={H - 4} fill="var(--muted)" fontSize="10" textAnchor="middle" fontFamily="var(--sans)" letterSpacing="0.06em">LAP</text>
 
         {/* Lines per driver */}
         {filteredDriverIds.map((id, ci) => {
@@ -324,7 +324,7 @@ function LapTimeChart({ lapsByDriver, filteredDriverIds, driverInfo, maxLap }) {
           return (
             <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 20, height: 3, background: color, borderRadius: 2 }} />
-              <span style={{ fontSize: 12, fontFamily: "'Barlow Condensed'", fontWeight: 700, color }}>{d.code || d.last_name}</span>
+              <span style={{ fontSize: 11, fontFamily: 'var(--sans)', fontWeight: 600, color }}>{d.code || d.last_name}</span>
             </div>
           );
         })}
@@ -369,7 +369,7 @@ function GapChart({ lapsByDriver, filteredDriverIds, driverInfo, maxLap }) {
 
   return (
     <div>
-      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 14, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 10 }}>Gap to Leader (seconds)</div>
+      <div style={{ fontFamily: 'var(--sans)', fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 10 }}>Gap to Leader (seconds)</div>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto' }}>
         {[0, 0.25, 0.5, 0.75, 1].map(pct => {
           const gap = maxGap * pct;
@@ -400,7 +400,7 @@ function GapChart({ lapsByDriver, filteredDriverIds, driverInfo, maxLap }) {
           const lap = Math.round(1 + (i / 19) * (maxLap - 1));
           return <text key={lap} x={x(lap)} y={H - PADB + 14} fill="var(--muted)" fontSize="10" textAnchor="middle">{lap}</text>;
         })}
-        <text x={W / 2} y={H - 4} fill="var(--muted)" fontSize="11" textAnchor="middle" fontFamily="'Barlow Condensed'" letterSpacing="1">LAP</text>
+        <text x={W / 2} y={H - 4} fill="var(--muted)" fontSize="10" textAnchor="middle" fontFamily="var(--sans)" letterSpacing="0.06em">LAP</text>
       </svg>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginTop: 10 }}>
         {filteredDriverIds.map((id, ci) => {
@@ -409,7 +409,7 @@ function GapChart({ lapsByDriver, filteredDriverIds, driverInfo, maxLap }) {
           return (
             <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 20, height: 3, background: color, borderRadius: 2 }} />
-              <span style={{ fontSize: 12, fontFamily: "'Barlow Condensed'", fontWeight: 700, color }}>{d.code || d.last_name}</span>
+              <span style={{ fontSize: 11, fontFamily: 'var(--sans)', fontWeight: 600, color }}>{d.code || d.last_name}</span>
             </div>
           );
         })}
@@ -439,7 +439,7 @@ function SectorChart({ lapsByDriver, filteredDriverIds, driverInfo }) {
 
   return (
     <div>
-      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 14, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 14 }}>Best Sector Times</div>
+      <div style={{ fontFamily: 'var(--sans)', fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 12 }}>Best Sector Times</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {validIds.map((id, ci) => {
           const d = driverInfo(id);
@@ -453,7 +453,7 @@ function SectorChart({ lapsByDriver, filteredDriverIds, driverInfo }) {
           const barW = (total / maxTotal) * 100;
           return (
             <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 40, fontFamily: "'Barlow Condensed'", fontWeight: 700, fontSize: 13, color }}>{d.code || '???'}</div>
+              <div style={{ width: 40, fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 11, color }}>{d.code || '???'}</div>
               <div style={{ flex: 1, position: 'relative', height: 28, background: 'var(--bg3)', borderRadius: 4, overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${barW}%`, display: 'flex' }}>
                   <div style={{ flex: s1w, background: '#3b82f6', transition: 'flex .4s' }} title={`S1: ${msToTime(b.s1)}`} />
@@ -461,7 +461,7 @@ function SectorChart({ lapsByDriver, filteredDriverIds, driverInfo }) {
                   <div style={{ flex: s3w, background: '#22c55e',transition: 'flex .4s' }} title={`S3: ${msToTime(b.s3)}`} />
                 </div>
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', paddingLeft: 8, pointerEvents: 'none' }}>
-                  <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, fontWeight: 700, color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,.8)' }}>
+                  <span style={{ fontFamily: 'var(--sans)', fontSize: 11, fontWeight: 700, color: 'var(--text)', textShadow: '0 1px 3px rgba(0,0,0,.8)' }}>
                     {msToTime(b.s1)} | {msToTime(b.s2)} | {msToTime(b.s3)}
                   </span>
                 </div>
@@ -497,7 +497,7 @@ function FastestLapsTable({ lapsByDriver, filteredDriverIds, driverInfo }) {
 
   return (
     <div>
-      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 18, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 14, borderBottom: '1px solid var(--line)', paddingBottom: 8 }}>Fastest Laps Summary</div>
+      <div style={{ fontFamily: 'var(--sans)', fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 12, borderBottom: '1px solid var(--line)', paddingBottom: 8 }}>Fastest Laps Summary</div>
       <div className="table-wrap">
         <table className="laptimes-table">
           <thead>

@@ -42,61 +42,20 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
 
   return (
     <div className="tv-theme" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <header
-        className="top-nav"
-        style={{
-          height: 52,
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 100,
-          background: 'var(--nav-bg)',
-          backdropFilter: 'blur(40px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 32px',
-          borderBottom: 'none',
-        }}
-      >
+      <header className="app-header">
+        <div className="app-header__bar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 24, minWidth: 0 }}>
           <button
             type="button"
-            className="mobile-nav-toggle"
+            className="mobile-nav-toggle btn btn-ghost btn-icon"
             onClick={() => setMobileNavOpen(true)}
             aria-label="Open navigation"
-            style={{
-              appearance: 'none',
-              border: '1px solid var(--glass-border)',
-              background: 'var(--glass-bg)',
-              color: 'var(--text)',
-              cursor: 'pointer',
-              width: 34,
-              height: 34,
-              borderRadius: 12,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 18,
-              lineHeight: 1,
-            }}
           >
             ☰
           </button>
 
-          <span
-            style={{
-              fontFamily: 'var(--sans)',
-              fontWeight: 900,
-              fontSize: 20,
-              fontStyle: 'italic',
-              letterSpacing: '-0.03em',
-              cursor: 'pointer',
-              userSelect: 'none',
-              whiteSpace: 'nowrap',
-            }}
+          <div
+            className="brand"
             onClick={() => handleSetTab('dashboard')}
             role="button"
             tabIndex={0}
@@ -105,38 +64,20 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
             }}
             aria-label="Go to Home"
           >
-            <span style={{ color: 'var(--red)' }}>F1</span>
-            <span style={{ color: 'var(--text)' }}>DB</span>
-          </span>
+            <span className="brand__mark" aria-hidden="true">
+              <span className="f1">F1</span>
+              <span className="db">DB</span>
+            </span>
+          </div>
 
-          <nav style={{ display: 'flex', gap: 28, alignItems: 'center' }} className="desktop-nav" aria-label="Primary">
+          <nav className="nav desktop-nav" aria-label="Primary">
             {navLinks.map((link) => (
               <div key={link.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                {link.id === 'import' ? (
-                  <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.08)', margin: '0 4px' }} aria-hidden="true" />
-                ) : null}
+                {link.id === 'import' ? <span className="nav-admin-divider" aria-hidden="true" /> : null}
                 <button
                   type="button"
                   onClick={() => handleSetTab(link.id)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontFamily: 'var(--sans)',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    letterSpacing: '-0.01em',
-                    color: tab === link.id ? 'var(--text)' : (link.isAdmin ? 'var(--muted)' : 'var(--sub)'),
-                    transition: 'color 0.15s',
-                    padding: '4px 0',
-                    whiteSpace: 'nowrap',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = 'var(--text)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = tab === link.id ? 'var(--text)' : (link.isAdmin ? 'var(--muted)' : 'var(--sub)');
-                  }}
+                  className={`nav-link ${tab === link.id ? 'is-active' : ''}${link.isAdmin ? ' is-admin' : ''}`}
                 >
                   {link.label}
                 </button>
@@ -145,66 +86,29 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
           </nav>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div className="header-right">
           <button
             type="button"
             onClick={() => toggleTheme?.()}
             title={theme === 'light' ? 'Switch to Dark theme' : 'Switch to Light theme'}
             aria-label="Toggle theme"
-            style={{
-              appearance: 'none',
-              border: '1px solid var(--glass-border)',
-              background: 'var(--glass-bg)',
-              color: 'var(--sub)',
-              cursor: 'pointer',
-              fontFamily: 'var(--sans)',
-              fontSize: 12,
-              padding: '5px 12px',
-              borderRadius: 980,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--line2)';
-              e.currentTarget.style.color = 'var(--text)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--glass-bg)';
-              e.currentTarget.style.color = 'var(--sub)';
-            }}
+            className="btn btn-ghost btn-sm theme-toggle"
           >
-            <span aria-hidden="true" style={{ fontSize: 12, lineHeight: 1 }}>{theme === 'dark' ? '☀' : '◑'}</span>
-            <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+            <span aria-hidden="true" style={{ lineHeight: 1 }}>{theme === 'dark' ? '☀' : '◑'}</span>
+            <span className="theme-toggle-label">{theme === 'dark' ? 'Light' : 'Dark'}</span>
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }} className="user-info">
+          <div className="user-chip">
             <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: '50%',
-                background: isAdmin ? 'var(--red)' : 'rgba(255,255,255,0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: 'var(--sans)',
-                fontWeight: 700,
-                fontSize: 12,
-                color: 'var(--text)',
-              }}
+              className="avatar user-avatar"
               aria-hidden="true"
+              style={{ background: isAdmin ? 'var(--red)' : 'var(--glass-bg)', borderColor: isAdmin ? 'transparent' : 'var(--glass-border)' }}
             >
               {initial}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }} className="user-text">
-              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--sub)', lineHeight: 1, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {displayName}
-              </span>
-              <span style={{ fontSize: 10, color: 'var(--muted)', lineHeight: 1, letterSpacing: '0.04em' }}>
-                {session ? (isAdmin ? 'ADMIN' : 'USER') : 'GUEST'}
-              </span>
+            <div className="user-meta">
+              <span className="user-name" title={displayName}>{displayName}</span>
+              <span className="role-badge">{session ? (isAdmin ? 'ADMIN' : 'USER') : 'GUEST'}</span>
             </div>
           </div>
 
@@ -212,23 +116,7 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
             <button
               type="button"
               onClick={signOut}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontFamily: 'var(--sans)',
-                fontSize: 12,
-                fontWeight: 500,
-                color: 'var(--muted)',
-                transition: 'color 0.15s',
-                padding: 0,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--text)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'var(--muted)';
-              }}
+              className="btn btn-ghost btn-xs sign-out-btn"
             >
               Sign out
             </button>
@@ -236,27 +124,12 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
             <button
               type="button"
               onClick={onSignIn}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontFamily: 'var(--sans)',
-                fontSize: 12,
-                fontWeight: 500,
-                color: 'var(--muted)',
-                transition: 'color 0.15s',
-                padding: 0,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--text)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'var(--muted)';
-              }}
+              className="btn btn-ghost btn-xs sign-out-btn"
             >
               Sign in
             </button>
           )}
+        </div>
         </div>
       </header>
 

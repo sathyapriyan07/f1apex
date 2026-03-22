@@ -196,7 +196,7 @@ export function DriverStandingsPage({ seasons }) {
                       </td>
                       <td style={{ textAlign: 'right' }}>
                         <div style={{ display: 'grid', gap: 6, justifyItems: 'end' }}>
-                          <span style={{ fontWeight: 900, fontSize: 18 }}>{pts}</span>
+                          <span style={{ fontWeight: 900, fontSize: 16 }}>{pts}</span>
                           <div className="points-bar" style={{ width: 120, height: 4, background: 'rgba(255,255,255,.10)', borderRadius: 2, overflow: 'hidden' }}>
                             <div style={{ width: `${pct}%`, height: '100%', background: tc, borderRadius: 2, transition: 'width .5s ease' }} />
                           </div>
@@ -369,7 +369,7 @@ export function ConstructorStandingsPage({ seasons }) {
                       </td>
                       <td style={{ textAlign: 'right' }}>
                         <div style={{ display: 'grid', gap: 6, justifyItems: 'end' }}>
-                          <span style={{ fontWeight: 900, fontSize: 18 }}>{pts}</span>
+                          <span style={{ fontWeight: 900, fontSize: 16 }}>{pts}</span>
                           <div className="points-bar" style={{ width: 140, height: 4, background: 'rgba(255,255,255,.10)', borderRadius: 2, overflow: 'hidden' }}>
                             <div style={{ width: `${pct}%`, height: '100%', background: tc, borderRadius: 2, transition: 'width .5s ease' }} />
                           </div>

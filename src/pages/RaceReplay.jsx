@@ -781,7 +781,7 @@ export default function RaceReplayPage({ races = [], circuits = [], drivers = []
       {!replayReady && !isLoading ? (
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.35)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 30, textAlign: 'center' }}>
-            <span style={{ fontSize: 48 }}>🏎</span>
+  <span style={{ fontSize: 36 }}>🏎</span>
             <p style={{ color: 'var(--muted)', fontFamily: 'var(--mono)', fontSize: 13 }}>
               Select a race and click Load Replay
             </p>
@@ -951,14 +951,14 @@ export default function RaceReplayPage({ races = [], circuits = [], drivers = []
                   <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                       <div style={{ fontFamily: 'var(--mono)', color: 'var(--muted)', fontSize: 11 }}>Speed</div>
-                      <div style={{ fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 32, color: 'var(--red)', lineHeight: 1 }}>
+                      <div style={{ fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 18, color: 'var(--red)', lineHeight: 1 }}>
                         {Number.isFinite(currentTelemetry.speed) ? Math.round(currentTelemetry.speed) : '—'}
                         <span style={{ fontSize: 12, marginLeft: 6, color: 'var(--muted)', fontFamily: 'var(--mono)', fontWeight: 700 }}>km/h</span>
                       </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-end' }}>
                       <div style={{ fontFamily: 'var(--mono)', color: 'var(--muted)', fontSize: 11 }}>Gear</div>
-                      <div style={{ fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 32, color: 'var(--text)', lineHeight: 1 }}>
+                      <div style={{ fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 18, color: 'var(--text)', lineHeight: 1 }}>
                         {Number.isFinite(currentTelemetry.n_gear) ? currentTelemetry.n_gear : '—'}
                       </div>
                     </div>

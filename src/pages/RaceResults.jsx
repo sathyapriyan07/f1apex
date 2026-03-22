@@ -86,9 +86,9 @@ export default function RaceResultsPage({ races, drivers, teams, onOpenDriver, d
       {error && <div className="error-msg" style={{ marginBottom: 16 }}>{error}</div>}
 
       {!selectedRaceId && (
-        <div className="card" style={{ padding: 48, textAlign: 'center' }}>
+        <div className="card" style={{ padding: 40, textAlign: 'center' }}>
           <span style={{ fontSize: 52 }}>🏁</span>
-          <p style={{ color: 'var(--muted)', marginTop: 12 }}>Select a race to view results</p>
+          <p style={{ color: 'var(--muted)', marginTop: 10, fontSize: 12 }}>Select a race to view results</p>
         </div>
       )}
 
@@ -124,7 +124,7 @@ export default function RaceResultsPage({ races, drivers, teams, onOpenDriver, d
                     <tr key={r.id}>
                       <td>
                         <span style={{
-                          fontFamily: "'Barlow Condensed'", fontWeight: 900, fontSize: 18,
+                          fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 16,
                           color: posColor(r.position),
                         }}>
                           {r.position ?? 'DNF'}
@@ -195,7 +195,7 @@ function Info({ label, val }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', padding: '4px 0' }}>
       <span style={{ fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600 }}>{label}</span>
-      <span style={{ fontFamily: "'Barlow Condensed'", fontWeight: 700, fontSize: 15 }}>{val}</span>
+      <span style={{ fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 12 }}>{val}</span>
     </div>
   );
 }

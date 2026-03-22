@@ -201,10 +201,12 @@ export default function Dashboard({ setTab, onOpenDriver, onOpenTeam, onOpenRace
             {heroMode === 'upcoming' ? (
               <div
                 style={{
-                  display: 'inline-flex',
+                  display: 'flex',
                   alignItems: 'flex-end',
                   gap: 0,
-                  marginTop: 24,
+                  marginTop: 20,
+                  flexWrap: 'nowrap',
+                  overflow: 'hidden',
                 }}
               >
                 {[
@@ -215,15 +217,15 @@ export default function Dashboard({ setTab, onOpenDriver, onOpenTeam, onOpenRace
                 ].map(([num, label], i) => (
                   <div key={label} style={{ display: 'flex', alignItems: 'flex-end', gap: 0 }}>
                     <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 72, lineHeight: 1, letterSpacing: '-0.04em', color: 'var(--text)' }}>
-                        {num}
+                      <div style={{ fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 'clamp(28px, 8vw, 64px)', lineHeight: 1, letterSpacing: '-0.04em', color: 'var(--text)' }}>
+                        {String(num).padStart(2, '0')}
                       </div>
-                      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 4 }}>
+                      <div style={{ fontFamily: 'var(--mono)', fontSize: 'clamp(7px, 1.5vw, 9px)', color: 'var(--muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 3 }}>
                         {label}
                       </div>
                     </div>
                     {i < 3 ? (
-                      <div style={{ fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 48, color: 'var(--red)', lineHeight: 1, margin: '0 8px 14px', opacity: 0.6 }}>
+                      <div style={{ fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 'clamp(20px, 5vw, 44px)', color: 'var(--red)', lineHeight: 1, margin: 'clamp(0px, 1vw, 8px)', marginBottom: 'clamp(10px, 2.5vw, 18px)', opacity: 0.7, flexShrink: 0 }}>
                         :
                       </div>
                     ) : null}
@@ -242,21 +244,7 @@ export default function Dashboard({ setTab, onOpenDriver, onOpenTeam, onOpenRace
                   key={label}
                   onClick={() => setTab(tab)}
                   type="button"
-                  style={{
-                    background: 'var(--glass-bg)',
-                    border: '1px solid var(--glass-border)',
-                    borderRadius: 980,
-                    padding: '8px 20px',
-                    fontFamily: 'var(--sans)',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: 'var(--text)',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s cubic-bezier(0.34,1.56,0.64,1)',
-                    letterSpacing: '-0.01em',
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--line2)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--glass-bg)'; }}
+                  className="btn btn-ghost"
                 >
                   {label}
                 </button>
