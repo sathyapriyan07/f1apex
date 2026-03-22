@@ -4,7 +4,7 @@ import { db } from '../lib/supabase';
 import { useCRUD } from '../hooks/useCRUD';
 import { useAuth } from '../hooks/useAuth';
 import Modal from '../components/Modal';
-import { TeamCard, CircuitCard } from '../components/Images';
+import { CircuitCard } from '../components/Images';
 import { SectionHead, RowActions, Empty, Loader, ViewToggle } from './Drivers';
 import CircuitDetailPanel from '../components/CircuitDetailPanel';
 import TeamDetailPanel from '../components/TeamDetailPanel';
@@ -90,7 +90,7 @@ export function TeamsPage({ detailId, onOpenTeam, onCloseDetail, onOpenDriver } 
   );
 }
 
-function TeamForm({ initial, onSave, onCancel, saving, error }) {
+export function TeamForm({ initial, onSave, onCancel, saving, error }) {
   const [f, setF] = useState({ name: '', nationality: '', base: '', team_color: '', championships: '', first_entry: '', wiki_url: '', logo_url: '', ...initial });
   const [allDrivers, setAllDrivers] = useState([]);
   const [currentDriverIds, setCurrentDriverIds] = useState([]);

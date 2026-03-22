@@ -8,7 +8,7 @@ import MobileMenu from './ModernMobileMenu';
 export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark', toggleTheme }) {
   const { session, profile, isAdmin } = useAuth();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const isFullBleed = tab === 'dashboard' || tab === 'drivers';
+  const isFullBleed = tab === 'dashboard' || tab === 'drivers' || tab === 'teams';
 
   const handleSetTab = (nextTab) => {
     setTab?.(nextTab);

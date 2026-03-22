@@ -1448,10 +1448,36 @@ html.theme-light .success-msg {
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   }
 }
-.teams-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+/* Teams page — grid/list layout */
+.teams-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 20px;
+  background: #000;
+}
+.team-card { height: 160px; }
+@media (hover: hover) {
+  .team-card:hover .admin-actions {
+    opacity: 1 !important;
+  }
+}
+@media (min-width: 768px) {
+  .teams-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    padding: 0 28px;
+    gap: 12px;
+  }
+  .team-card { height: 180px !important; }
+}
+@media (min-width: 1024px) {
+  .teams-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+  .team-card { height: 200px !important; }
+}
 .circuits-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
 @media (max-width: 768px) {
-  .teams-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
   .circuits-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
 }
 
