@@ -265,18 +265,20 @@ export default function RaceResultsPage({ races = [], seasons = [], teams = [], 
               )}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              {result.teams?.logo_url ? (
-                <img src={result.teams.logo_url} alt={teamName || ''}
-                  style={{ height: 18, width: 'auto', maxWidth: 48, objectFit: 'contain', flexShrink: 0 }}
-                  onError={(e) => (e.currentTarget.style.display = 'none')}
-                />
-              ) : (
-                <div style={{ width: 3, height: 18, borderRadius: 2, background: teamColor, flexShrink: 0 }} />
-              )}
+            <div>
               <div style={{ fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 15, color: '#fff', letterSpacing: '-0.01em' }}>
                 {result.drivers?.first_name} {result.drivers?.last_name}
               </div>
+              {result.teams?.logo_url ? (
+                <img src={result.teams.logo_url} alt={teamName || ''}
+                  style={{ height: 14, width: 'auto', maxWidth: 44, objectFit: 'contain', marginTop: 4 }}
+                  onError={(e) => (e.currentTarget.style.display = 'none')}
+                />
+              ) : (
+                <div style={{ fontFamily: 'var(--sans)', fontWeight: 500, fontSize: 12, color: teamColor, marginTop: 2 }}>
+                  {teamName || '—'}
+                </div>
+              )}
             </div>
 
             <div style={{ textAlign: 'right', marginRight: 10 }}>
