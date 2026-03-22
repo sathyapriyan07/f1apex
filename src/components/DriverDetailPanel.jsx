@@ -472,8 +472,7 @@ function ResultList({ rows, teamColor }) {
             {r.races?.name || '—'}
           </div>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
-            {r.races?.season_year} · R{r.races?.round}
-            {r.races?.circuits?.country ? ` · ${r.races.circuits.country}` : ''}
+            R{r.races?.round}{r.races?.circuits?.country ? ` · ${r.races.circuits.country}` : ''}
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
@@ -493,36 +492,65 @@ function ResultList({ rows, teamColor }) {
 }
 
 function ResultsSection({ results, teamColor }) {
+  const years = useMemo(() => {
+    const s = new Set(results.map(r => Number(r.races?.season_year)).filter(Boolean));
+    return [...s].sort((a, b) => b - a);
+  }, [results]);
+
+  const [year, setYear] = useState(() => years[0] ?? new Date().getFullYear());
   const [tab, setTab] = useState('race');
 
-  const sort = (arr) => [...arr].sort((a, b) => {
-    const dy = Number(b.races?.season_year) - Number(a.races?.season_year);
-    return dy !== 0 ? dy : (b.races?.round || 0) - (a.races?.round || 0);
-  });
+  // Reset tab when year changes
+  useEffect(() => { setTab('race'); }, [year]);
+  // Keep year in sync if results load after mount
+  useEffect(() => { if (years.length) setYear(years[0]); }, [years[0]]); // eslint-disable-line
 
-  const raceRows = sort(results.filter(r => !r.races?.sprint));
-  const sprintRows = sort(results.filter(r => Boolean(r.races?.sprint)));
+  const sort = (arr) => [...arr].sort((a, b) => (a.races?.round || 0) - (b.races?.round || 0));
+
+  const yearResults = results.filter(r => Number(r.races?.season_year) === year);
+  const raceRows = sort(yearResults.filter(r => !r.races?.sprint));
+  const sprintRows = sort(yearResults.filter(r => Boolean(r.races?.sprint)));
   const hasSprints = sprintRows.length > 0;
 
   const tabStyle = (active) => ({
     fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 13,
     color: active ? '#000' : 'rgba(255,255,255,0.5)',
     background: active ? teamColor : 'transparent',
-    border: 'none', borderRadius: 8, padding: '6px 16px',
-    cursor: 'pointer', transition: 'all 0.15s',
+    border: 'none', borderRadius: 8, padding: '6px 14px',
+    cursor: 'pointer',
   });
 
   return (
     <div style={{ padding: '28px 16px 0' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+      {/* Header row: label + controls */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, gap: 10 }}>
         <SectionLabel>RESULTS</SectionLabel>
-        {hasSprints && (
-          <div style={{ display: 'flex', gap: 4, background: '#1a1a1a', borderRadius: 10, padding: 4 }}>
-            <button style={tabStyle(tab === 'race')} onClick={() => setTab('race')}>Race</button>
-            <button style={tabStyle(tab === 'sprint')} onClick={() => setTab('sprint')}>Sprint</button>
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Year dropdown */}
+          <select
+            value={year}
+            onChange={e => setYear(Number(e.target.value))}
+            style={{
+              fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 13,
+              color: '#fff', background: '#1a1a1a',
+              border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: 8, padding: '6px 10px',
+              cursor: 'pointer', outline: 'none', appearance: 'none',
+              WebkitAppearance: 'none',
+            }}
+          >
+            {years.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+          {/* Race / Sprint tabs — only when sprints exist for selected year */}
+          {hasSprints && (
+            <div style={{ display: 'flex', gap: 4, background: '#1a1a1a', borderRadius: 10, padding: 4 }}>
+              <button style={tabStyle(tab === 'race')} onClick={() => setTab('race')}>Race</button>
+              <button style={tabStyle(tab === 'sprint')} onClick={() => setTab('sprint')}>Sprint</button>
+            </div>
+          )}
+        </div>
       </div>
+
       <div style={{ background: '#1a1a1a', borderRadius: 16, overflow: 'hidden' }}>
         <ResultList rows={tab === 'race' ? raceRows : sprintRows} teamColor={teamColor} />
       </div>
