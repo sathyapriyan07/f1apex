@@ -1,24 +1,22 @@
 // src/components/ModernMobileMenu.jsx
-import { useMemo } from 'react';
+import { Car, Flag, Home, Map, Trophy, User } from 'lucide-react';
 
 export default function MobileMenu({ tab, activeTab, setTab }) {
   const currentTab = tab ?? activeTab ?? 'dashboard';
-  const items = useMemo(
-    () => [
-      { id: 'dashboard', label: 'Home', icon: '🏠' },
-      { id: 'drivers', label: 'Drivers', icon: '👤' },
-      { id: 'teams', label: 'Teams', icon: '🏎' },
-      { id: 'races', label: 'Races', icon: '🏁' },
-      { id: 'standings', label: 'Standings', icon: '🏆' },
-      { id: 'circuits', label: 'Circuits', icon: '🗺' },
-    ],
-    [],
-  );
+  const navItems = [
+    { id: 'dashboard', label: 'HOME', Icon: Home },
+    { id: 'drivers', label: 'DRIVERS', Icon: User },
+    { id: 'teams', label: 'TEAMS', Icon: Car },
+    { id: 'races', label: 'RACES', Icon: Flag },
+    { id: 'standings', label: 'STANDINGS', Icon: Trophy },
+    { id: 'circuits', label: 'CIRCUITS', Icon: Map },
+  ];
 
   return (
     <nav className="menu" aria-label="Primary">
-      {items.map((item) => {
+      {navItems.map((item) => {
         const isActive = currentTab === item.id;
+        const Icon = item.Icon;
         return (
           <button
             key={item.id}
@@ -28,23 +26,27 @@ export default function MobileMenu({ tab, activeTab, setTab }) {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: 3,
+              gap: 4,
               background: 'none',
               border: 'none',
               cursor: 'pointer',
               flex: 1,
-              padding: '6px 0',
-              transition: 'opacity 0.15s',
+              padding: '8px 0',
             }}
             aria-current={isActive ? 'page' : undefined}
           >
-            <span style={{ fontSize: 20 }} aria-hidden="true">{item.icon}</span>
+            <Icon
+              size={22}
+              color={isActive ? '#ffffff' : 'rgba(255,255,255,0.35)'}
+              strokeWidth={isActive ? 2.5 : 1.8}
+              aria-hidden="true"
+            />
             <span
               style={{
                 fontFamily: 'var(--sans)',
-                fontWeight: 600,
-                fontSize: 9,
-                letterSpacing: '0.03em',
+                fontWeight: 700,
+                fontSize: 8,
+                letterSpacing: '0.04em',
                 textTransform: 'uppercase',
                 color: isActive ? '#fff' : 'rgba(255,255,255,0.35)',
               }}
@@ -57,4 +59,3 @@ export default function MobileMenu({ tab, activeTab, setTab }) {
     </nav>
   );
 }
-

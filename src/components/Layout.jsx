@@ -1,5 +1,6 @@
 // src/components/Layout.jsx
 import { useEffect, useState } from 'react';
+import { Search } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { signOut } from '../lib/supabase';
 import MobileMenu from './ModernMobileMenu';
@@ -7,7 +8,7 @@ import MobileMenu from './ModernMobileMenu';
 export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark', toggleTheme }) {
   const { session, profile, isAdmin } = useAuth();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const isDashboard = tab === 'dashboard';
+  const isFullBleed = tab === 'dashboard' || tab === 'drivers';
 
   const handleSetTab = (nextTab) => {
     setTab?.(nextTab);
@@ -83,13 +84,14 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
               display: 'flex',
               alignItems: 'center',
               gap: 8,
-              background: 'rgba(255,255,255,0.08)',
+              background: 'rgba(255,255,255,0.1)',
               borderRadius: 980,
-              padding: '7px 14px',
-              width: 160,
+              padding: '8px 16px',
+              flex: 1,
+              maxWidth: 200,
             }}
           >
-            <span style={{ fontSize: 13, color: 'var(--muted)' }} aria-hidden="true">🔍</span>
+            <Search size={13} color="rgba(255,255,255,0.4)" aria-hidden="true" />
             <input
               placeholder="Search..."
               aria-label="Search"
@@ -97,7 +99,7 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
                 background: 'none',
                 border: 'none',
                 outline: 'none',
-                fontSize: 12,
+                fontSize: 13,
                 color: 'var(--text)',
                 width: '100%',
                 fontFamily: 'var(--sans)',
@@ -258,7 +260,7 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
       ) : null}
 
       <main className="app-main" style={{ flex: 1 }}>
-        {isDashboard ? children : <div className="container">{children}</div>}
+        {isFullBleed ? children : <div className="container">{children}</div>}
       </main>
 
       <MobileMenu tab={tab} setTab={handleSetTab} accentColor="var(--red)" />

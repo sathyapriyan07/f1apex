@@ -261,7 +261,7 @@ function AppShell({ onOpenAuth }) {
 
   const renderTab = () => {
     switch (tab) {
-      case 'dashboard':    return <Dashboard setTab={handleSetTab} onOpenDriver={openDriver} onOpenTeam={openTeam} onOpenRace={openRace} />;
+      case 'dashboard':    return <Dashboard setTab={handleSetTab} teams={teams} onOpenDriver={openDriver} />;
       case 'drivers':      return (
         <DriversPage
           teams={teams}
@@ -302,7 +302,7 @@ function AppShell({ onOpenAuth }) {
         />
       ) : null;
       case 'users':        return isAdmin ? <UsersPage /> : null;
-      default:             return <Dashboard setTab={handleSetTab} />;
+      default:             return <Dashboard setTab={handleSetTab} teams={teams} onOpenDriver={openDriver} />;
     }
   };
 

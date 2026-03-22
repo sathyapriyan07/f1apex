@@ -13,7 +13,7 @@ function countdownParts(ms) {
   return { days, hrs, min, sec };
 }
 
-export default function Dashboard({ setTab }) {
+export default function Dashboard({ setTab, teams = [], onOpenDriver }) {
   const { isAdmin } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -183,21 +183,21 @@ export default function Dashboard({ setTab }) {
   const driverStandings = driverTop.slice(0, 3);
   const constructorStandings = constructorTop.slice(0, 3);
 
+  const handleSetTab = (t) => setTab?.(t);
+
   return (
     <div style={{ background: '#000', minHeight: '100%', color: 'var(--text)' }}>
       {error ? <div className="error-msg">{error}</div> : null}
 
       <section
         style={{
-          padding: '20px 20px 24px',
+          padding: '20px 20px 16px',
           background: '#000',
-          display: 'grid',
-          gridTemplateColumns: '1fr auto',
-          gap: 12,
-          alignItems: 'flex-start',
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
-        <div>
+        <div style={{ paddingRight: nextRace?.circuits?.layout_url ? '46%' : 0 }}>
           <div
             style={{
               fontFamily: 'var(--mono)',
@@ -290,122 +290,190 @@ export default function Dashboard({ setTab }) {
           </div>
         </div>
 
-        <div style={{ width: 160, height: 140, flexShrink: 0 }}>
-          {nextRace?.circuits?.layout_url ? (
+        {nextRace?.circuits?.layout_url ? (
+          <div
+            style={{
+              position: 'absolute',
+              right: 16,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: '42%',
+              maskImage: 'linear-gradient(to right, transparent 0%, black 30%)',
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 30%)',
+              pointerEvents: 'none',
+            }}
+          >
             <img
               src={nextRace.circuits.layout_url}
-              alt="circuit"
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-              onError={(e) => (e.currentTarget.style.display = 'none')}
+              alt=""
+              style={{
+                width: '100%',
+                height: 'auto',
+                objectFit: 'contain',
+                display: 'block',
+              }}
+              onError={(e) => (e.currentTarget.parentElement.style.display = 'none')}
             />
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </section>
 
-      <section style={{ padding: '8px 20px 24px', background: '#000' }}>
+      <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 20px' }} />
+
+      <section style={{ padding: '8px 20px 28px', background: '#000' }}>
         <div
           style={{
             fontFamily: 'var(--sans)',
             fontWeight: 800,
-            fontSize: 20,
+            fontSize: 22,
             letterSpacing: '-0.01em',
-            marginBottom: 20,
+            marginBottom: 16,
             color: 'var(--text)',
           }}
         >
           <span style={{ color: 'var(--red)' }}>Driver</span> Standings
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'flex-end', gap: 0 }}>
-          {[driverStandings[1], driverStandings[0], driverStandings[2]].map((driver, colIdx) => {
-            if (!driver) return <div key={colIdx} />;
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1.2fr 1fr',
+            gap: 8,
+            alignItems: 'stretch',
+          }}
+        >
+          {[driverStandings[1], driverStandings[0], driverStandings[2]].map((standing, colIdx) => {
+            if (!standing) return <div key={colIdx} />;
+            const driver = standing.drivers;
             const isCenter = colIdx === 1;
-            const teamLogoUrl = driver.teams?.logo_url || null;
+            const team =
+              teams.find((t) => t.id === standing.team_id || t.id === driver?.team_id || t.name === standing.teams?.name) ||
+              standing.teams ||
+              null;
+            const teamColor = team?.team_color || '#ffffff';
+            const pos = colIdx === 0 ? 2 : colIdx === 1 ? 1 : 3;
+
             return (
               <div
-                key={driver.id}
+                key={standing.id}
+                onClick={() => onOpenDriver?.(driver?.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') onOpenDriver?.(driver?.id);
+                }}
                 style={{
+                  position: 'relative',
+                  borderRadius: 14,
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  minHeight: isCenter ? 200 : 170,
+                  background: '#111',
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 8,
-                  paddingBottom: isCenter ? 0 : 16,
+                  justifyContent: 'flex-end',
                 }}
               >
-                <div
-                  style={{
-                    width: isCenter ? 100 : 80,
-                    height: isCenter ? 100 : 80,
-                    borderRadius: '50%',
-                    overflow: 'hidden',
-                    background: 'rgba(255,255,255,0.06)',
-                    border: `2px solid ${isCenter ? 'var(--red)' : 'rgba(255,255,255,0.1)'}`,
-                  }}
-                >
-                  {driver.drivers?.image_url ? (
-                    <img
-                      src={driver.drivers.image_url}
-                      alt=""
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
-                      onError={(e) => (e.currentTarget.style.display = 'none')}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontFamily: 'var(--mono)',
-                        fontSize: isCenter ? 16 : 13,
-                        fontWeight: 700,
-                        color: 'var(--muted)',
-                      }}
-                    >
-                      {driver.drivers?.code || '?'}
-                    </div>
-                  )}
-                </div>
-
-                <div
-                  style={{
-                    fontFamily: 'var(--sans)',
-                    fontWeight: 700,
-                    fontSize: isCenter ? 15 : 13,
-                    textAlign: 'center',
-                    color: 'var(--text)',
-                    lineHeight: 1.3,
-                  }}
-                >
-                  {driver.drivers?.first_name || ''}<br />
-                  {driver.drivers?.last_name || ''}
-                </div>
-
-                {teamLogoUrl ? (
+                {driver?.image_url ? (
                   <img
-                    src={teamLogoUrl}
+                    src={driver.image_url}
                     alt=""
                     style={{
-                      width: 28,
-                      height: 28,
-                      objectFit: 'contain',
-                      filter: 'brightness(0) invert(1)',
-                      opacity: 0.8,
+                      position: 'absolute',
+                      inset: 0,
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      objectPosition: 'top center',
                     }}
                     onError={(e) => (e.currentTarget.style.display = 'none')}
                   />
                 ) : (
-                  <div style={{ height: 28 }} />
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontFamily: 'var(--mono)', fontWeight: 800, fontSize: 36, color: 'rgba(255,255,255,0.08)' }}>
+                      {driver?.code || '?'}
+                    </span>
+                  </div>
                 )}
+
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: `linear-gradient(
+                      to bottom,
+                      transparent 0%,
+                      transparent 30%,
+                      rgba(0,0,0,0.5) 55%,
+                      rgba(0,0,0,0.85) 80%,
+                      #000 100%
+                    )`,
+                  }}
+                  aria-hidden="true"
+                />
+
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 3,
+                    background: teamColor,
+                    opacity: 0.8,
+                  }}
+                  aria-hidden="true"
+                />
+
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 10,
+                    left: 10,
+                    fontFamily: 'var(--mono)',
+                    fontWeight: 800,
+                    fontSize: 13,
+                    color: 'rgba(255,255,255,0.5)',
+                  }}
+                >
+                  P{pos}
+                </div>
+
+                <div style={{ position: 'relative', zIndex: 2, padding: '10px 10px 12px' }}>
+                  <div style={{ fontFamily: 'var(--sans)', fontWeight: 400, fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.1 }}>
+                    {driver?.first_name}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: 'var(--sans)',
+                      fontWeight: 800,
+                      fontSize: isCenter ? 14 : 12,
+                      color: '#fff',
+                      lineHeight: 1.1,
+                      letterSpacing: '-0.01em',
+                      marginBottom: 6,
+                    }}
+                  >
+                    {driver?.last_name}
+                  </div>
+
+                  {team?.logo_url ? (
+                    <img
+                      src={team.logo_url}
+                      alt=""
+                      style={{ width: 20, height: 20, objectFit: 'contain', display: 'block' }}
+                      onError={(e) => (e.currentTarget.style.display = 'none')}
+                    />
+                  ) : null}
+                </div>
               </div>
             );
           })}
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: 20 }}>
+        <div style={{ textAlign: 'center', marginTop: 16 }}>
           <button
-            onClick={() => setTab('standings')}
+            onClick={() => handleSetTab('standings')}
             style={{
               background: 'none',
               border: 'none',
@@ -414,7 +482,6 @@ export default function Dashboard({ setTab }) {
               fontWeight: 700,
               fontSize: 14,
               color: 'var(--red)',
-              letterSpacing: '-0.01em',
             }}
             type="button"
           >
@@ -423,86 +490,157 @@ export default function Dashboard({ setTab }) {
         </div>
       </section>
 
-      <section style={{ padding: '8px 20px 24px', background: '#000' }}>
+      <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 20px' }} />
+
+      <section style={{ padding: '8px 20px 28px', background: '#000' }}>
         <div
           style={{
             fontFamily: 'var(--sans)',
             fontWeight: 800,
-            fontSize: 20,
+            fontSize: 22,
             letterSpacing: '-0.01em',
-            marginBottom: 20,
+            marginBottom: 16,
             color: 'var(--text)',
           }}
         >
           <span style={{ color: 'var(--red)' }}>Team</span> Standings
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'flex-end', gap: 0 }}>
-          {[constructorStandings[1], constructorStandings[0], constructorStandings[2]].map((team, colIdx) => {
-            if (!team) return <div key={colIdx} />;
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1.2fr 1fr',
+            gap: 8,
+            alignItems: 'stretch',
+          }}
+        >
+          {[constructorStandings[1], constructorStandings[0], constructorStandings[2]].map((standing, colIdx) => {
+            if (!standing) return <div key={colIdx} />;
+            const team = standing.teams;
             const isCenter = colIdx === 1;
+            const teamColor = team?.team_color || '#ffffff';
+            const pos = colIdx === 0 ? 2 : colIdx === 1 ? 1 : 3;
+
             return (
               <div
-                key={team.id}
+                key={standing.id}
+                onClick={() => handleSetTab('constructors')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') handleSetTab('constructors');
+                }}
                 style={{
+                  position: 'relative',
+                  borderRadius: 14,
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  minHeight: isCenter ? 200 : 170,
+                  background: `color-mix(in srgb, ${teamColor} 8%, #111 92%)`,
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 8,
-                  paddingBottom: isCenter ? 0 : 16,
+                  justifyContent: 'flex-end',
                 }}
               >
                 <div
                   style={{
-                    width: isCenter ? 88 : 70,
-                    height: isCenter ? 88 : 70,
-                    borderRadius: '50%',
-                    background: 'rgba(255,255,255,0.06)',
-                    border: `2px solid ${isCenter ? 'var(--yellow)' : 'rgba(255,255,255,0.1)'}`,
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -60%)',
+                    width: '70%',
+                    height: '55%',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: 14,
-                    overflow: 'hidden',
                   }}
                 >
-                  {team.teams?.logo_url ? (
+                  {team?.logo_url ? (
                     <img
-                      src={team.teams.logo_url}
+                      src={team.logo_url}
                       alt=""
-                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                      style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', opacity: 0.9 }}
                       onError={(e) => (e.currentTarget.style.display = 'none')}
                     />
-                  ) : (
-                    <span style={{ fontFamily: 'var(--mono)', fontSize: 13, fontWeight: 700, color: 'var(--muted)' }}>
-                      {team.teams?.name?.slice(0, 3).toUpperCase()}
-                    </span>
-                  )}
+                  ) : null}
                 </div>
 
                 <div
                   style={{
-                    fontFamily: 'var(--sans)',
-                    fontWeight: 700,
-                    fontSize: isCenter ? 15 : 13,
-                    textAlign: 'center',
-                    color: 'var(--text)',
+                    position: 'absolute',
+                    inset: 0,
+                    background: `linear-gradient(
+                      to bottom,
+                      transparent 0%,
+                      transparent 40%,
+                      rgba(0,0,0,0.6) 65%,
+                      rgba(0,0,0,0.92) 85%,
+                      #000 100%
+                    )`,
+                  }}
+                  aria-hidden="true"
+                />
+
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 3,
+                    background: teamColor,
+                    opacity: 0.9,
+                  }}
+                  aria-hidden="true"
+                />
+
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 10,
+                    left: 10,
+                    fontFamily: 'var(--mono)',
+                    fontWeight: 800,
+                    fontSize: 13,
+                    color: 'rgba(255,255,255,0.4)',
                   }}
                 >
-                  {team.teams?.name}
+                  P{pos}
                 </div>
 
-                <div style={{ fontFamily: 'var(--sans)', fontWeight: 800, fontSize: isCenter ? 20 : 16, color: 'var(--text)' }}>
-                  {team.points}
+                <div style={{ position: 'relative', zIndex: 2, padding: '10px 10px 12px', textAlign: 'center' }}>
+                  <div
+                    style={{
+                      fontFamily: 'var(--sans)',
+                      fontWeight: 800,
+                      fontSize: isCenter ? 15 : 13,
+                      color: '#fff',
+                      letterSpacing: '-0.01em',
+                      marginBottom: 4,
+                    }}
+                  >
+                    {team?.name}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: 'var(--sans)',
+                      fontWeight: 900,
+                      fontSize: isCenter ? 22 : 18,
+                      color: '#fff',
+                      letterSpacing: '-0.02em',
+                    }}
+                  >
+                    {standing.points}
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: 20 }}>
+        <div style={{ textAlign: 'center', marginTop: 16 }}>
           <button
-            onClick={() => setTab('constructors')}
+            onClick={() => handleSetTab('constructors')}
             style={{
               background: 'none',
               border: 'none',

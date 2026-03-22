@@ -1,16 +1,16 @@
 // src/pages/Drivers.jsx
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { db } from '../lib/supabase';
 import { useCRUD } from '../hooks/useCRUD';
 import { useAuth } from '../hooks/useAuth';
 import Modal from '../components/Modal';
-import { DriverCard } from '../components/Images';
 import DriverDetailPanel from '../components/DriverDetailPanel';
 
 export default function DriversPage({ teams, detailId, onOpenDriver, onCloseDetail }) {
   const { isAdmin } = useAuth();
   const C = useCRUD(db.drivers);
   const [view, setView] = useState('grid'); // 'grid' | 'list'
+  const teamById = useMemo(() => new Map((teams || []).map((t) => [t.id, t])), [teams]);
 
   if (detailId) {
     return (
@@ -31,68 +31,191 @@ export default function DriversPage({ teams, detailId, onOpenDriver, onCloseDeta
     );
   }
 
-  return (
-    <div>
-      <SectionHead
-        title="Drivers" count={C.rows.length}
-        search={C.search} setSearch={C.setSearch}
-        onAdd={isAdmin ? C.openAdd : null}
-        extra={<ViewToggle view={view} setView={setView} />}
-      />
-      {C.error && <div className="error-msg" style={{ marginBottom: 14 }}>{C.error}</div>}
+  const filteredDrivers = C.rows || [];
 
-      {C.loading ? <Loader /> : C.rows.length === 0 ? <Empty icon="👤" label="No drivers yet" /> : (
+  return (
+    <div style={{ background: '#000', minHeight: '100%', color: 'var(--text)' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px 20px 12px',
+          background: '#000',
+        }}
+      >
+        <h1
+          style={{
+            fontFamily: 'var(--sans)',
+            fontWeight: 900,
+            fontSize: 28,
+            letterSpacing: '-0.03em',
+            color: 'var(--text)',
+            margin: 0,
+          }}
+        >
+          Drivers
+        </h1>
+
+        <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <button
+            onClick={() => setView('grid')}
+            type="button"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '6px 8px',
+              color: view === 'grid' ? 'var(--text)' : 'rgba(255,255,255,0.3)',
+              fontSize: 18,
+              transition: 'color 0.15s',
+            }}
+            aria-label="Grid view"
+          >
+            ⊞
+          </button>
+          <button
+            onClick={() => setView('list')}
+            type="button"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '6px 8px',
+              color: view === 'list' ? 'var(--text)' : 'rgba(255,255,255,0.3)',
+              fontSize: 18,
+              transition: 'color 0.15s',
+            }}
+            aria-label="List view"
+          >
+            ☰
+          </button>
+        </div>
+      </div>
+
+      <div style={{ padding: '0 20px 16px', background: '#000' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            background: 'rgba(255,255,255,0.07)',
+            borderRadius: 12,
+            padding: '11px 16px',
+            border: '1px solid rgba(255,255,255,0.06)',
+          }}
+        >
+          <span style={{ color: 'var(--muted)', fontSize: 15 }} aria-hidden="true">🔍</span>
+          <input
+            placeholder="Search"
+            value={C.search}
+            onChange={(e) => C.setSearch(e.target.value)}
+            style={{
+              background: 'none',
+              border: 'none',
+              outline: 'none',
+              fontFamily: 'var(--sans)',
+              fontSize: 15,
+              color: 'var(--text)',
+              width: '100%',
+            }}
+            aria-label="Search drivers"
+          />
+        </div>
+      </div>
+
+      {C.error && <div className="error-msg" style={{ margin: '0 20px 14px' }}>{C.error}</div>}
+
+      {C.loading ? <Loader /> : filteredDrivers.length === 0 ? <Empty icon="👤" label="No drivers yet" /> : (
         view === 'grid' ? (
-          <div className="grid drivers-grid">
-            {C.rows.map(d => (
-              <DriverCard
-                key={d.id}
-                driver={d}
-                teamName={d.teams?.name}
-                teamLogoUrl={teams.find(t => t.id === d.team_id)?.logo_url}
-                teamColor={teams.find(t => t.id === d.team_id)?.team_color}
+          <div className="drivers-grid">
+            {filteredDrivers.map((driver) => (
+              <DriverCardGrid
+                key={driver.id}
+                driver={driver}
+                team={teamById.get(driver.team_id) || driver.teams || null}
+                onClick={() => onOpenDriver?.(driver.id)}
                 isAdmin={isAdmin}
-                onClick={() => onOpenDriver?.(d.id)}
-                onEdit={() => C.openEdit(d)}
-                onDelete={() => C.remove(d.id)}
+                onEdit={() => C.openEdit(driver)}
+                onDelete={() => C.remove(driver.id)}
               />
             ))}
           </div>
         ) : (
-          <div className="table-wrap">
-            <table className="drivers-table">
-              <thead>
-                <tr><th>Photo</th><th>#</th><th>Name</th><th>Code</th><th>Nationality</th><th>Team</th><th>Status</th>{isAdmin && <th></th>}</tr>
-              </thead>
-              <tbody>
-                {C.rows.map(d => (
-                  <tr key={d.id} onClick={() => onOpenDriver?.(d.id)} style={{ cursor: 'pointer' }}>
-                    <td style={{ width: 44 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 3, overflow: 'hidden', background: 'var(--bg3)', flexShrink: 0 }}>
-                        {d.image_url
-                          ? <img src={d.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} onError={e => e.target.style.display='none'} />
-                          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)' }}>{d.code?.slice(0,2)}</div>
-                        }
-                      </div>
-                    </td>
-                    <td><span style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--red)', fontWeight: 500 }}>{d.number || '—'}</span></td>
-                    <td><span style={{ fontWeight: 700 }}>{d.first_name} {d.last_name}</span></td>
-                    <td><span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--sub)', letterSpacing: '.06em' }}>{d.code || '—'}</span></td>
-                    <td style={{ color: 'var(--sub)', fontSize: 12 }}>{d.nationality || '—'}</td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {teams.find(t => t.id === d.team_id)?.logo_url && (
-                          <img src={teams.find(t => t.id === d.team_id).logo_url} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} onError={e => e.target.style.display='none'} />
-                        )}
-                        <span style={{ fontSize: 12 }}>{d.teams?.name || '—'}</span>
-                      </div>
-                    </td>
-                    <td><span className={`badge ${d.active ? 'badge-green' : 'badge-muted'}`}>{d.active ? 'Active' : 'Retired'}</span></td>
-                    {isAdmin && <td><RowActions onEdit={() => C.openEdit(d)} onDelete={() => C.remove(d.id)} /></td>}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 0, background: '#000' }}>
+            {filteredDrivers.map((driver) => {
+              const team = teamById.get(driver.team_id) || driver.teams || null;
+              return (
+                <div
+                  key={driver.id}
+                  onClick={() => onOpenDriver?.(driver.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') onOpenDriver?.(driver.id);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 14,
+                    padding: '12px 0',
+                    borderBottom: '1px solid rgba(255,255,255,0.06)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: '50%',
+                      background: '#1a1a1a',
+                      overflow: 'hidden',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {driver.image_url ? (
+                      <img
+                        src={driver.image_url}
+                        alt=""
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
+                        onError={(e) => (e.currentTarget.style.display = 'none')}
+                      />
+                    ) : null}
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>
+                      {driver.first_name} {driver.last_name}
+                    </div>
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>
+                      {driver.code || '—'} · {driver.nationality || '—'}
+                    </div>
+                  </div>
+
+                  {team?.logo_url ? (
+                    <img
+                      src={team.logo_url}
+                      alt=""
+                      style={{ width: 22, height: 22, objectFit: 'contain', flexShrink: 0 }}
+                      onError={(e) => (e.currentTarget.style.display = 'none')}
+                    />
+                  ) : null}
+
+                  <div
+                    style={{
+                      fontFamily: 'var(--sans)',
+                      fontWeight: 800,
+                      fontSize: 16,
+                      color: 'rgba(255,255,255,0.5)',
+                      minWidth: 28,
+                      textAlign: 'right',
+                    }}
+                  >
+                    {driver.number || '—'}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )
       )}
@@ -102,6 +225,208 @@ export default function DriversPage({ teams, detailId, onOpenDriver, onCloseDeta
           <DriverForm initial={C.modal.data} teams={teams} onSave={C.save} onCancel={() => C.setModal(null)} saving={C.saving} error={C.error} />
         </Modal>
       )}
+    </div>
+  );
+}
+
+function DriverCardGrid({ driver, team, onClick, isAdmin, onEdit, onDelete }) {
+  return (
+    <div
+      className="driver-card"
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') onClick?.();
+      }}
+      style={{
+        background: '#1a1a1a',
+        borderRadius: 12,
+        overflow: 'hidden',
+        position: 'relative',
+        cursor: 'pointer',
+        aspectRatio: '3/4',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+        transition: 'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)',
+        minHeight: 180,
+        transform: 'scale(1)',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'scale(1.02)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'scale(1)';
+      }}
+    >
+      {driver.image_url ? (
+        <img
+          src={driver.image_url}
+          alt=""
+          style={{
+            position: 'absolute',
+            right: 0,
+            bottom: 0,
+            height: '95%',
+            width: '65%',
+            objectFit: 'cover',
+            objectPosition: 'top center',
+          }}
+          onError={(e) => (e.currentTarget.style.display = 'none')}
+        />
+      ) : (
+        <div
+          style={{
+            position: 'absolute',
+            right: 0,
+            bottom: 0,
+            width: '60%',
+            height: '85%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <span
+            style={{
+              fontFamily: 'var(--mono)',
+              fontWeight: 700,
+              fontSize: 42,
+              color: 'rgba(255,255,255,0.06)',
+              letterSpacing: '0.04em',
+            }}
+          >
+            {driver.code || '?'}
+          </span>
+        </div>
+      )}
+
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(to right, rgba(20,20,20,0.95) 35%, rgba(20,20,20,0.3) 70%, transparent 100%)',
+        }}
+        aria-hidden="true"
+      />
+
+      <div
+        style={{
+          position: 'absolute',
+          top: 12,
+          right: 14,
+          fontFamily: 'var(--sans)',
+          fontWeight: 900,
+          fontSize: 22,
+          color: 'white',
+          zIndex: 2,
+          letterSpacing: '-0.02em',
+        }}
+      >
+        {driver.number || '—'}
+      </div>
+
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 2,
+          padding: '12px 14px 14px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: 'var(--sans)',
+            fontWeight: 400,
+            fontSize: 13,
+            color: 'rgba(255,255,255,0.85)',
+            lineHeight: 1.1,
+          }}
+        >
+          {driver.first_name}
+        </div>
+
+        <div
+          style={{
+            fontFamily: 'var(--sans)',
+            fontWeight: 800,
+            fontSize: 17,
+            color: '#ffffff',
+            lineHeight: 1.1,
+            letterSpacing: '-0.01em',
+          }}
+        >
+          {driver.last_name}
+        </div>
+
+        <div
+          style={{
+            fontFamily: 'var(--mono)',
+            fontWeight: 500,
+            fontSize: 10,
+            color: 'rgba(255,255,255,0.45)',
+            letterSpacing: '0.06em',
+            marginTop: 4,
+          }}
+        >
+          {driver.code || '—'}
+        </div>
+
+        {team?.logo_url ? (
+          <img
+            src={team.logo_url}
+            alt=""
+            style={{
+              width: 28,
+              height: 28,
+              objectFit: 'contain',
+              marginTop: 6,
+            }}
+            onError={(e) => (e.currentTarget.style.display = 'none')}
+          />
+        ) : null}
+      </div>
+
+      {isAdmin ? (
+        <div
+          className="admin-actions"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            display: 'flex',
+            gap: 4,
+            opacity: 0,
+            transition: 'opacity 0.15s',
+            zIndex: 3,
+          }}
+        >
+          <button
+            className="btn btn-ghost btn-xs"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit?.();
+            }}
+          >
+            Edit
+          </button>
+          <button
+            className="btn btn-danger btn-xs"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete?.();
+            }}
+          >
+            Del
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -119,8 +444,8 @@ function DriverForm({ initial, teams, onSave, onCancel, saving, error }) {
       past_team_ids: Array.isArray(merged.past_team_ids) ? merged.past_team_ids : [],
     };
   });
-  const set = k => e => setF(p => ({ ...p, [k]: e.target.value }));
-  const setMulti = k => e => setF(p => ({ ...p, [k]: Array.from(e.target.selectedOptions).map(o => o.value).filter(Boolean) }));
+  const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
+  const setMulti = (k) => (e) => setF((p) => ({ ...p, [k]: Array.from(e.target.selectedOptions).map((o) => o.value).filter(Boolean) }));
   const submit = () => {
     const payload = { ...f };
     delete payload.teams;
@@ -130,15 +455,14 @@ function DriverForm({ initial, teams, onSave, onCancel, saving, error }) {
     }
     if (payload.number === '') payload.number = null;
     if (payload.team_id === '') payload.team_id = null;
-    payload.past_team_ids = [...new Set((payload.past_team_ids || []).filter(Boolean))].filter(id => id !== payload.team_id);
+    payload.past_team_ids = [...new Set((payload.past_team_ids || []).filter(Boolean))].filter((id) => id !== payload.team_id);
     onSave(payload);
   };
   return (
     <div>
-      {/* Image preview */}
       {f.image_url && (
         <div style={{ marginBottom: 16, height: 80, display: 'flex', gap: 12, alignItems: 'center' }}>
-          <img src={f.image_url} alt="preview" style={{ height: 80, width: 60, objectFit: 'cover', objectPosition: 'top', borderRadius: 4, border: '1px solid var(--line2)' }} onError={e => e.target.style.display='none'} />
+          <img src={f.image_url} alt="preview" style={{ height: 80, width: 60, objectFit: 'cover', objectPosition: 'top', borderRadius: 4, border: '1px solid var(--line2)' }} onError={(e) => (e.currentTarget.style.display = 'none')} />
           <span style={{ fontSize: 11, color: 'var(--muted)' }}>Preview</span>
         </div>
       )}
@@ -153,18 +477,18 @@ function DriverForm({ initial, teams, onSave, onCancel, saving, error }) {
           <label>Team</label>
           <select value={f.team_id || ''} onChange={set('team_id')}>
             <option value="">— None —</option>
-            {(teams || []).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            {(teams || []).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
         </div>
         <div className="form-group full">
           <label>Past Teams</label>
           <select multiple value={f.past_team_ids || []} onChange={setMulti('past_team_ids')} style={{ minHeight: 110 }}>
-            {(teams || []).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            {(teams || []).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
         </div>
         <div className="form-group">
           <label>Status</label>
-          <select value={f.active ? 'true' : 'false'} onChange={e => setF(p => ({ ...p, active: e.target.value === 'true' }))}>
+          <select value={f.active ? 'true' : 'false'} onChange={(e) => setF((p) => ({ ...p, active: e.target.value === 'true' }))}>
             <option value="true">Active</option>
             <option value="false">Retired</option>
           </select>
@@ -174,14 +498,14 @@ function DriverForm({ initial, teams, onSave, onCancel, saving, error }) {
       </div>
       {error && <div className="error-msg" style={{ marginTop: 10 }}>{error}</div>}
       <div className="modal-actions">
-        <button className="btn btn-ghost" onClick={onCancel}>Cancel</button>
-        <button className="btn btn-red" onClick={submit} disabled={saving}>{saving ? <span className="spinner" /> : null} Save</button>
+        <button className="btn btn-ghost" onClick={onCancel} type="button">Cancel</button>
+        <button className="btn btn-red" onClick={submit} disabled={saving} type="button">{saving ? <span className="spinner" /> : null} Save</button>
       </div>
     </div>
   );
 }
 
-// ── Shared sub-components exported for other pages ────────────────────────────
+// —— Shared sub-components exported for other pages ——
 export function SectionHead({ title, count, search, setSearch, onAdd, extra }) {
   return (
     <div className="section-head">
@@ -192,8 +516,8 @@ export function SectionHead({ title, count, search, setSearch, onAdd, extra }) {
       </div>
       <div className="section-head__actions">
         {extra}
-        <input className="section-head__search" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
-        {onAdd && <button className="btn btn-red" onClick={onAdd}>Add</button>}
+        <input className="section-head__search" placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        {onAdd && <button className="btn btn-red" onClick={onAdd} type="button">Add</button>}
       </div>
     </div>
   );
@@ -219,8 +543,8 @@ export function ViewToggle({ view, setView }) {
 export function RowActions({ onEdit, onDelete }) {
   return (
     <div style={{ display: 'flex', gap: 5 }}>
-      <button className="btn btn-ghost btn-xs" onClick={(e) => { e.stopPropagation(); onEdit(); }}>Edit</button>
-      <button className="btn btn-danger btn-xs" onClick={(e) => { e.stopPropagation(); onDelete(); }}>Del</button>
+      <button className="btn btn-ghost btn-xs" onClick={(e) => { e.stopPropagation(); onEdit(); }} type="button">Edit</button>
+      <button className="btn btn-danger btn-xs" onClick={(e) => { e.stopPropagation(); onDelete(); }} type="button">Del</button>
     </div>
   );
 }
@@ -235,5 +559,6 @@ export function Empty({ icon, label }) {
 }
 
 export function Loader() {
-  return <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><span className="spinner spinner-lg" /></div>;
+  return <div style={{ display: 'flex', justifyContent: 'center', padding: 60, background: '#000' }}><span className="spinner spinner-lg" /></div>;
 }
+

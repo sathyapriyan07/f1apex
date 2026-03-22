@@ -1421,11 +1421,36 @@ html.theme-light .success-msg {
 }
 
 /* Responsive grids */
-.drivers-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+/* Drivers page — grid/list layout */
+.drivers-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 20px;
+  background: #000;
+}
+.driver-card { min-height: 180px; }
+@media (hover: hover) {
+  .driver-card:hover .admin-actions {
+    opacity: 1 !important;
+  }
+}
+@media (min-width: 768px) {
+  .drivers-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    padding: 0 28px;
+    gap: 12px;
+  }
+  .driver-card { min-height: 220px; }
+}
+@media (min-width: 1024px) {
+  .drivers-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+}
 .teams-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
 .circuits-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
 @media (max-width: 768px) {
-  .drivers-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
   .teams-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
   .circuits-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
 }
