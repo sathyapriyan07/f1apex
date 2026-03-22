@@ -1,5 +1,9 @@
 // src/components/DriverDetailPanel.jsx
 import { useEffect, useMemo, useState } from 'react';
+import {
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
+  LineChart, Line, ReferenceLine, CartesianGrid,
+} from 'recharts';
 import { db, driver_career } from '../lib/supabase';
 
 const ordinal = (n) => {
@@ -276,152 +280,104 @@ function SeasonStatsSection({ results, standings, year, teamColor }) {
   );
 }
 
+const ChartTooltip = ({ active, payload, label, suffix = '' }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{
+      background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.1)',
+      borderRadius: 8, padding: '8px 12px',
+      fontFamily: 'var(--sans)', fontSize: 12, color: '#fff',
+    }}>
+      <div style={{ color: 'rgba(255,255,255,0.5)', marginBottom: 2 }}>R{label}</div>
+      <div style={{ fontWeight: 700 }}>{payload[0].value}{suffix}</div>
+    </div>
+  );
+};
+
+const axisStyle = { fontFamily: 'var(--mono)', fontSize: 9, fill: 'rgba(255,255,255,0.3)' };
+
 function PerformanceCharts({ results, teamColor }) {
   const currentYear = new Date().getFullYear();
   const seasonResults = [...results]
     .filter(r => Number(r.races?.season_year) === currentYear && !r.races?.sprint)
     .sort((a, b) => (a.races?.round || 0) - (b.races?.round || 0));
 
-  const maxPts = 25;
+  const pointsData = seasonResults.map(r => ({
+    round: r.races?.round,
+    pts: parseFloat(r.points || 0),
+  }));
+
+  const posData = seasonResults
+    .filter(r => r.position)
+    .map(r => ({ round: r.races?.round, pos: r.position }));
+
+  const noData = (
+    <div style={{ textAlign: 'center', padding: '24px 0', color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>
+      No data for {currentYear}
+    </div>
+  );
 
   return (
     <div style={{ padding: '28px 16px 0' }}>
       <SectionLabel>PERFORMANCE CHARTS</SectionLabel>
 
-      {/* Points per round */}
-      <div style={{
-        background: '#1a1a1a', borderRadius: 16,
-        padding: '16px 16px 12px', marginTop: 14,
-      }}>
+      {/* Points per round — Bar chart */}
+      <div style={{ background: '#1a1a1a', borderRadius: 16, padding: '16px 16px 12px', marginTop: 14 }}>
         <div style={{
           fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 12,
-          color: 'rgba(255,255,255,0.4)', marginBottom: 12,
+          color: 'rgba(255,255,255,0.4)', marginBottom: 14,
           textTransform: 'uppercase', letterSpacing: '0.06em',
         }}>Points Per Round — {currentYear}</div>
-
-        {seasonResults.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '20px 0', color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>
-            No data for {currentYear}
-          </div>
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 0 }}>
-            <div style={{
-              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-              height: 100, marginRight: 8, flexShrink: 0, paddingBottom: 18,
-            }}>
-              {[25, 12, 0].map(v => (
-                <span key={v} style={{
-                  fontFamily: 'var(--mono)', fontSize: 8,
-                  color: 'rgba(255,255,255,0.25)', lineHeight: 1,
-                }}>{v}</span>
-              ))}
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'flex-end', height: 80, gap: 3 }}>
-                {seasonResults.map((r, i) => {
-                  const pts = parseFloat(r.points || 0);
-                  const h = Math.max((pts / maxPts) * 76, pts > 0 ? 3 : 2);
-                  return (
-                    <div key={i} style={{
-                      flex: 1, minWidth: 4, height: h,
-                      background: pts > 0 ? teamColor : 'rgba(255,255,255,0.1)',
-                      borderRadius: '2px 2px 0 0',
-                    }} title={`R${r.races?.round}: ${pts}pts`} />
-                  );
-                })}
-              </div>
-              <div style={{ display: 'flex', gap: 3, marginTop: 4 }}>
-                {seasonResults.map((r, i) => (
-                  <span key={i} style={{
-                    flex: 1, minWidth: 4, fontFamily: 'var(--mono)', fontSize: 6,
-                    color: 'rgba(255,255,255,0.2)', textAlign: 'center', display: 'block',
-                  }}>{String(r.races?.round || i + 1).padStart(2, '0')}</span>
+        {pointsData.length === 0 ? noData : (
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={pointsData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barCategoryGap="20%">
+              <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.05)" />
+              <XAxis dataKey="round" tick={axisStyle} tickLine={false} axisLine={false} />
+              <YAxis tick={axisStyle} tickLine={false} axisLine={false} domain={[0, 26]} ticks={[0, 10, 20, 25]} />
+              <Tooltip content={<ChartTooltip suffix="pts" />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+              <Bar dataKey="pts" radius={[3, 3, 0, 0]}>
+                {pointsData.map((d, i) => (
+                  <Cell key={i} fill={d.pts > 0 ? teamColor : 'rgba(255,255,255,0.1)'} />
                 ))}
-              </div>
-            </div>
-          </div>
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         )}
       </div>
 
-      {/* Finishing positions */}
-      <div style={{
-        background: '#1a1a1a', borderRadius: 16,
-        padding: '16px 16px 12px', marginTop: 10,
-      }}>
+      {/* Finishing positions — Line chart (inverted: P1 at top) */}
+      <div style={{ background: '#1a1a1a', borderRadius: 16, padding: '16px 16px 12px', marginTop: 10 }}>
         <div style={{
           fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 12,
-          color: 'rgba(255,255,255,0.4)', marginBottom: 12,
+          color: 'rgba(255,255,255,0.4)', marginBottom: 14,
           textTransform: 'uppercase', letterSpacing: '0.06em',
         }}>Finishing Positions — {currentYear}</div>
-
-        {seasonResults.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '20px 0', color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>
-            No data
-          </div>
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0 }}>
-            <div style={{
-              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-              height: 100, marginRight: 8, flexShrink: 0, paddingBottom: 18,
-            }}>
-              {[1, 10, 20].map(v => (
-                <span key={v} style={{
-                  fontFamily: 'var(--mono)', fontSize: 8,
-                  color: 'rgba(255,255,255,0.25)', lineHeight: 1,
-                }}>P{v}</span>
-              ))}
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ position: 'relative', height: 80 }}>
-                {[1, 5, 10, 15, 20].map(pos => (
-                  <div key={pos} style={{
-                    position: 'absolute', left: 0, right: 0,
-                    top: `${((pos - 1) / 19) * 100}%`,
-                    height: 1, background: 'rgba(255,255,255,0.05)',
-                  }} />
-                ))}
-                {seasonResults.map((r, i) => {
-                  if (!r.position) return null;
-                  const x = (i / Math.max(seasonResults.length - 1, 1)) * 100;
-                  const y = ((r.position - 1) / 19) * 100;
-                  const color = r.position === 1 ? '#ffd60a'
-                    : r.position <= 3 ? '#e5e5ea'
-                    : r.position <= 10 ? teamColor
-                    : 'rgba(255,255,255,0.3)';
-                  return (
-                    <div key={i} style={{
-                      position: 'absolute', left: `${x}%`, top: `${y}%`,
-                      transform: 'translate(-50%,-50%)',
-                      width: 6, height: 6, borderRadius: '50%', background: color,
-                    }} title={`R${r.races?.round}: P${r.position}`} />
-                  );
-                })}
-                <svg style={{
-                  position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible',
-                }}>
-                  <polyline
-                    points={(() => {
-                      const valid = seasonResults.filter(r => r.position);
-                      return valid.map((r, i) => {
-                        const x = (i / Math.max(valid.length - 1, 1)) * 100;
-                        const y = ((r.position - 1) / 19) * 100;
-                        return `${x}%,${y}%`;
-                      }).join(' ');
-                    })()}
-                    fill="none" stroke={teamColor} strokeWidth="1.5" strokeOpacity="0.5"
-                  />
-                </svg>
-              </div>
-              <div style={{ display: 'flex', gap: 3, marginTop: 4 }}>
-                {seasonResults.map((r, i) => (
-                  <span key={i} style={{
-                    flex: 1, fontFamily: 'var(--mono)', fontSize: 6,
-                    color: 'rgba(255,255,255,0.2)', textAlign: 'center',
-                  }}>{String(r.races?.round || i + 1).padStart(2, '0')}</span>
-                ))}
-              </div>
-            </div>
-          </div>
+        {posData.length === 0 ? noData : (
+          <ResponsiveContainer width="100%" height={160}>
+            <LineChart data={posData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+              <CartesianGrid stroke="rgba(255,255,255,0.05)" />
+              <XAxis dataKey="round" tick={axisStyle} tickLine={false} axisLine={false} />
+              <YAxis
+                reversed domain={[1, 20]} ticks={[1, 5, 10, 15, 20]}
+                tickFormatter={v => `P${v}`} tick={axisStyle} tickLine={false} axisLine={false}
+              />
+              <Tooltip content={<ChartTooltip suffix="" />} cursor={{ stroke: 'rgba(255,255,255,0.1)' }} />
+              <ReferenceLine y={3} stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
+              <ReferenceLine y={10} stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
+              <Line
+                dataKey="pos" type="monotone"
+                stroke={teamColor} strokeWidth={2}
+                dot={({ cx, cy, payload }) => {
+                  const c = payload.pos === 1 ? '#ffd60a'
+                    : payload.pos <= 3 ? '#e5e5ea'
+                    : payload.pos <= 10 ? teamColor
+                    : 'rgba(255,255,255,0.35)';
+                  return <circle key={cx} cx={cx} cy={cy} r={4} fill={c} stroke="#1a1a1a" strokeWidth={1.5} />;
+                }}
+                activeDot={{ r: 5, fill: teamColor }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         )}
       </div>
     </div>
@@ -480,94 +436,95 @@ function ChampionshipsSection({ standings, teamColor }) {
   );
 }
 
+const posColor = (pos, teamColor) => {
+  if (pos === 1) return '#ffd60a';
+  if (pos <= 3) return '#e5e5ea';
+  if (pos <= 10) return teamColor;
+  return 'rgba(255,255,255,0.4)';
+};
+
+function ResultList({ rows, teamColor }) {
+  if (rows.length === 0) {
+    return (
+      <div style={{
+        padding: '24px 18px', textAlign: 'center',
+        fontFamily: 'var(--sans)', fontSize: 13, color: 'rgba(255,255,255,0.3)',
+      }}>No results</div>
+    );
+  }
+  return rows.map((r, i) => {
+    const pts = parseFloat(r.points || 0);
+    return (
+      <div key={r.id || i} style={{
+        display: 'grid', gridTemplateColumns: '44px 1fr auto',
+        alignItems: 'center', gap: '0 12px', padding: '12px 18px',
+        borderBottom: i < rows.length - 1 ? '1px solid rgba(255,255,255,0.07)' : 'none',
+      }}>
+        <div style={{
+          fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 20,
+          color: r.position ? posColor(r.position, teamColor) : 'rgba(255,255,255,0.25)',
+          letterSpacing: '-0.02em', lineHeight: 1,
+        }}>
+          {r.position ? `P${r.position}` : r.status?.slice(0, 3).toUpperCase() || '—'}
+        </div>
+        <div>
+          <div style={{ fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 13, color: '#fff' }}>
+            {r.races?.name || '—'}
+          </div>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
+            {r.races?.season_year} · R{r.races?.round}
+            {r.races?.circuits?.country ? ` · ${r.races.circuits.country}` : ''}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{
+            fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 16,
+            color: pts > 0 ? '#fff' : 'rgba(255,255,255,0.25)', letterSpacing: '-0.02em',
+          }}>{pts > 0 ? `${pts}pt` : '—'}</div>
+          {r.grid_position != null && (
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>
+              Grid {r.grid_position}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  });
+}
+
 function ResultsSection({ results, teamColor }) {
-  const sorted = [...results].sort((a, b) => {
-    const ya = Number(a.races?.season_year) || 0;
-    const yb = Number(b.races?.season_year) || 0;
-    if (yb !== ya) return yb - ya;
-    return (b.races?.round || 0) - (a.races?.round || 0);
+  const [tab, setTab] = useState('race');
+
+  const sort = (arr) => [...arr].sort((a, b) => {
+    const dy = Number(b.races?.season_year) - Number(a.races?.season_year);
+    return dy !== 0 ? dy : (b.races?.round || 0) - (a.races?.round || 0);
   });
 
-  const posColor = (pos) => {
-    if (pos === 1) return '#ffd60a';
-    if (pos <= 3) return '#e5e5ea';
-    if (pos <= 10) return teamColor;
-    return 'rgba(255,255,255,0.4)';
-  };
+  const raceRows = sort(results.filter(r => !r.races?.sprint));
+  const sprintRows = sort(results.filter(r => Boolean(r.races?.sprint)));
+  const hasSprints = sprintRows.length > 0;
+
+  const tabStyle = (active) => ({
+    fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 13,
+    color: active ? '#000' : 'rgba(255,255,255,0.5)',
+    background: active ? teamColor : 'transparent',
+    border: 'none', borderRadius: 8, padding: '6px 16px',
+    cursor: 'pointer', transition: 'all 0.15s',
+  });
 
   return (
     <div style={{ padding: '28px 16px 0' }}>
-      <SectionLabel>RESULTS</SectionLabel>
-      <div style={{
-        background: '#1a1a1a', borderRadius: 16, overflow: 'hidden', marginTop: 14,
-      }}>
-        {sorted.map((r, i) => {
-          const isSprint = Boolean(r.races?.sprint);
-          const pts = parseFloat(r.points || 0);
-          return (
-            <div key={r.id || i} style={{
-              display: 'grid',
-              gridTemplateColumns: '44px 1fr auto',
-              alignItems: 'center',
-              gap: '0 12px',
-              padding: '12px 18px',
-              borderBottom: i < sorted.length - 1 ? '1px solid rgba(255,255,255,0.07)' : 'none',
-            }}>
-              {/* Position */}
-              <div style={{
-                fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 20,
-                color: r.position ? posColor(r.position) : 'rgba(255,255,255,0.25)',
-                letterSpacing: '-0.02em', lineHeight: 1,
-              }}>
-                {r.position ? `P${r.position}` : r.status?.slice(0, 3).toUpperCase() || '—'}
-              </div>
-
-              {/* Race info */}
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{
-                    fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 13, color: '#fff',
-                  }}>{r.races?.name || '—'}</span>
-                  {isSprint && (
-                    <span style={{
-                      fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700,
-                      color: '#ffd60a', background: 'rgba(255,214,10,0.12)',
-                      borderRadius: 4, padding: '2px 5px', letterSpacing: '0.04em',
-                    }}>SPRINT</span>
-                  )}
-                </div>
-                <div style={{
-                  fontFamily: 'var(--mono)', fontSize: 11,
-                  color: 'rgba(255,255,255,0.35)', marginTop: 2,
-                }}>
-                  {r.races?.season_year} · R{r.races?.round}
-                  {r.races?.circuits?.country ? ` · ${r.races.circuits.country}` : ''}
-                </div>
-              </div>
-
-              {/* Points + grid */}
-              <div style={{ textAlign: 'right' }}>
-                <div style={{
-                  fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 16,
-                  color: pts > 0 ? '#fff' : 'rgba(255,255,255,0.25)',
-                  letterSpacing: '-0.02em',
-                }}>{pts > 0 ? `${pts}pt` : '—'}</div>
-                {r.grid_position != null && (
-                  <div style={{
-                    fontFamily: 'var(--mono)', fontSize: 10,
-                    color: 'rgba(255,255,255,0.3)', marginTop: 2,
-                  }}>Grid {r.grid_position}</div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-        {sorted.length === 0 && (
-          <div style={{
-            padding: '24px 18px', textAlign: 'center',
-            fontFamily: 'var(--sans)', fontSize: 13, color: 'rgba(255,255,255,0.3)',
-          }}>No results</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <SectionLabel>RESULTS</SectionLabel>
+        {hasSprints && (
+          <div style={{ display: 'flex', gap: 4, background: '#1a1a1a', borderRadius: 10, padding: 4 }}>
+            <button style={tabStyle(tab === 'race')} onClick={() => setTab('race')}>Race</button>
+            <button style={tabStyle(tab === 'sprint')} onClick={() => setTab('sprint')}>Sprint</button>
+          </div>
         )}
+      </div>
+      <div style={{ background: '#1a1a1a', borderRadius: 16, overflow: 'hidden' }}>
+        <ResultList rows={tab === 'race' ? raceRows : sprintRows} teamColor={teamColor} />
       </div>
     </div>
   );
