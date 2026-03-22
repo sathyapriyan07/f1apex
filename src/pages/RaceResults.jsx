@@ -251,12 +251,12 @@ export default function RaceResultsPage({ races = [], seasons = [], teams = [], 
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 18, color: '#fff', letterSpacing: '-0.01em' }}>
+              <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 15, color: '#fff', letterSpacing: '-0.01em' }}>
                 {String(result.position ?? 'R').padStart(2, '0')}
               </span>
               {posChange !== null && (
                 <span style={{
-                  fontFamily: 'var(--mono)', fontSize: 10,
+                  fontFamily: 'var(--mono)', fontSize: 9,
                   color: posChange > 0 ? '#30d158' : posChange < 0 ? '#ff453a' : 'rgba(255,255,255,0.3)',
                   display: 'flex', alignItems: 'center', gap: 2,
                 }}>
@@ -266,27 +266,27 @@ export default function RaceResultsPage({ races = [], seasons = [], teams = [], 
             </div>
 
             <div>
-              <div style={{ fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 15, color: '#fff', letterSpacing: '-0.01em' }}>
+              <div style={{ fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 13, color: '#fff', letterSpacing: '-0.01em' }}>
                 {result.drivers?.first_name} {result.drivers?.last_name}
               </div>
               {result.teams?.logo_url ? (
                 <img src={result.teams.logo_url} alt={teamName || ''}
-                  style={{ height: 14, width: 'auto', maxWidth: 44, objectFit: 'contain', marginTop: 4 }}
+                  style={{ height: 12, width: 'auto', maxWidth: 40, objectFit: 'contain', marginTop: 3 }}
                   onError={(e) => (e.currentTarget.style.display = 'none')}
                 />
               ) : (
-                <div style={{ fontFamily: 'var(--sans)', fontWeight: 500, fontSize: 12, color: teamColor, marginTop: 2 }}>
+                <div style={{ fontFamily: 'var(--sans)', fontWeight: 500, fontSize: 11, color: teamColor, marginTop: 2 }}>
                   {teamName || '—'}
                 </div>
               )}
             </div>
 
             <div style={{ textAlign: 'right', marginRight: 10 }}>
-              <div style={{ fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 18, color: '#fff', letterSpacing: '-0.02em' }}>
+              <div style={{ fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 14, color: '#fff', letterSpacing: '-0.02em' }}>
                 {hasPoints ? result.points : ''}
               </div>
               <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 1 }}>
-                {hasPoints ? 'PTS' : (result.status || '—')}
+                {result.time_or_gap || (hasPoints ? 'PTS' : (result.status || '—'))}
               </div>
             </div>
 
