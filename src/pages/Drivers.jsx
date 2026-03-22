@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import Modal from '../components/Modal';
 import DriverDetailPanel from '../components/DriverDetailPanel';
 
-export default function DriversPage({ teams, detailId, onOpenDriver, onCloseDetail }) {
+export default function DriversPage({ teams, detailId, onOpenDriver, onOpenTeam, onCloseDetail }) {
   const { isAdmin } = useAuth();
   const C = useCRUD(db.drivers);
   const [view, setView] = useState('grid'); // 'grid' | 'list'
@@ -19,6 +19,7 @@ export default function DriversPage({ teams, detailId, onOpenDriver, onCloseDeta
           driverId={detailId}
           mode="page"
           onClose={onCloseDetail}
+          onOpenTeamDetail={onOpenTeam}
           onEdit={(driver) => C.openEdit(driver)}
         />
 
@@ -561,4 +562,3 @@ export function Empty({ icon, label }) {
 export function Loader() {
   return <div style={{ display: 'flex', justifyContent: 'center', padding: 60, background: '#000' }}><span className="spinner spinner-lg" /></div>;
 }
-
