@@ -8,6 +8,11 @@ import { CircuitCard } from '../components/Images';
 import { SectionHead, RowActions, Empty, Loader, ViewToggle } from './Drivers';
 import CircuitDetailPanel from '../components/CircuitDetailPanel';
 import TeamDetailPanel from '../components/TeamDetailPanel';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import MapIcon from '@mui/icons-material/Map';
+import SportsScoreIcon from '@mui/icons-material/SportsScore';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
 // ══════════════════════════════════════════
 // TEAMS
@@ -45,7 +50,7 @@ export function TeamsPage({ detailId, onOpenTeam, onCloseDetail, onOpenDriver } 
       />
       {C.error && <div className="error-msg" style={{ marginBottom: 14 }}>{C.error}</div>}
 
-      {C.loading ? <Loader /> : C.rows.length === 0 ? <Empty icon="🏆" label="No teams yet" /> : (
+      {C.loading ? <Loader /> : C.rows.length === 0 ? <Empty icon={<EmojiEventsIcon sx={{ fontSize: 28, color: 'var(--muted)' }} />} label="No teams yet" /> : (
         view === 'grid' ? (
           <div className="grid teams-grid">
             {C.rows.map(t => (
@@ -226,7 +231,7 @@ export function SeasonsPage() {
     <div>
       <SectionHead title="Seasons" count={C.rows.length} search={C.search} setSearch={C.setSearch} onAdd={isAdmin ? C.openAdd : null} />
       {C.error && <div className="error-msg" style={{ marginBottom: 14 }}>{C.error}</div>}
-      {C.loading ? <Loader /> : C.rows.length === 0 ? <Empty icon="📅" label="No seasons yet" /> : (
+      {C.loading ? <Loader /> : C.rows.length === 0 ? <Empty icon={<CalendarMonthIcon sx={{ fontSize: 28, color: 'var(--muted)' }} />} label="No seasons yet" /> : (
         <div className="table-wrap">
           <table className="seasons-table">
             <thead><tr><th>Year</th><th>Rounds</th><th>Champion Driver</th><th>Champion Team</th><th>Ref</th>{isAdmin && <th></th>}</tr></thead>
@@ -237,7 +242,7 @@ export function SeasonsPage() {
                   <td><span style={{ fontFamily: 'var(--mono)', color: 'var(--sub)', fontSize: 12 }}>{s.rounds || '—'}</span></td>
                   <td><b>{s.champion_driver || '—'}</b></td>
                   <td style={{ color: 'var(--sub)' }}>{s.champion_team || '—'}</td>
-                  <td>{s.url ? <a href={s.url} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', fontFamily: 'var(--mono)', fontSize: 11 }}>↗</a> : '—'}</td>
+                  <td>{s.url ? <a href={s.url} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', fontFamily: 'var(--mono)', fontSize: 11, display: 'inline-flex', alignItems: 'center' }}><OpenInNewIcon sx={{ fontSize: 12 }} /></a> : '—'}</td>
                   {isAdmin && <td><RowActions onEdit={() => C.openEdit(s)} onDelete={() => C.remove(s.id)} /></td>}
                 </tr>
               ))}
@@ -316,7 +321,7 @@ export function CircuitsPage({ detailId, onOpenCircuit, onCloseDetail } = {}) {
         extra={<ViewToggle view={view} setView={setView} />}
       />
       {C.error && <div className="error-msg" style={{ marginBottom: 14 }}>{C.error}</div>}
-      {C.loading ? <Loader /> : C.rows.length === 0 ? <Empty icon="🗺" label="No circuits yet" /> : (
+      {C.loading ? <Loader /> : C.rows.length === 0 ? <Empty icon={<MapIcon sx={{ fontSize: 28, color: 'var(--muted)' }} />} label="No circuits yet" /> : (
         view === 'grid' ? (
           <div className="grid circuits-grid">
             {C.rows.map(c => (
@@ -555,7 +560,7 @@ export function RacesPage({ circuits, seasons }) {
     <div>
       <SectionHead title="Races" count={C.rows.length} search={C.search} setSearch={C.setSearch} onAdd={isAdmin ? C.openAdd : null} />
       {C.error && <div className="error-msg" style={{ marginBottom: 14 }}>{C.error}</div>}
-      {C.loading ? <Loader /> : C.rows.length === 0 ? <Empty icon="🏁" label="No races yet" /> : (
+      {C.loading ? <Loader /> : C.rows.length === 0 ? <Empty icon={<SportsScoreIcon sx={{ fontSize: 28, color: 'var(--muted)' }} />} label="No races yet" /> : (
         <div className="table-wrap races-table-wrap">
           <div className="races-cards" aria-label="Races list">
             {C.rows.map((r) => {

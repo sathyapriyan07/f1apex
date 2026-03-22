@@ -1,6 +1,8 @@
 // src/pages/Dashboard.jsx
 import { useEffect, useState } from 'react';
 import { db } from '../lib/supabase';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
 function useCountdown(dateStr) {
   const [cd, setCd] = useState({ days: 0, hrs: 0, min: 0 });
@@ -155,8 +157,8 @@ function UpcomingHero({ race, handleSetTab }) {
         <span style={{
           width: 16, height: 16, borderRadius: '50%',
           background: 'rgba(255,255,255,0.12)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9,
-        }}>→</span>
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}><ArrowForwardIcon sx={{ fontSize: 10 }} /></span>
         Schedule
       </button>
     </div>
@@ -234,8 +236,8 @@ function PastHero({ race, teams, onViewResults }) {
           <span style={{
             width: 16, height: 16, borderRadius: '50%',
             background: 'rgba(255,255,255,0.12)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9,
-          }}>→</span>
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}><ArrowForwardIcon sx={{ fontSize: 10 }} /></span>
           Results
         </button>
       </div>
@@ -300,7 +302,7 @@ function UpcomingRaceRow({ race, isLast, onClick }) {
         )}
       </div>
 
-      <span style={{ color: 'rgba(255,255,255,0.18)', fontSize: 12 }}>›</span>
+      <ChevronRightIcon sx={{ fontSize: 14, color: 'rgba(255,255,255,0.18)' }} />
     </div>
   );
 }
@@ -357,7 +359,7 @@ function PastRaceRow({ race, teams, isLast, onClick }) {
         <PodiumStrips topThree={topThree} teams={teams} />
       </div>
 
-      <span style={{ color: 'rgba(255,255,255,0.18)', fontSize: 12 }}>›</span>
+      <ChevronRightIcon sx={{ fontSize: 14, color: 'rgba(255,255,255,0.18)' }} />
     </div>
   );
 }

@@ -1,9 +1,14 @@
 // src/components/Layout.jsx
 import { useEffect, useState } from 'react';
-import { Search } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { signOut } from '../lib/supabase';
 import MobileMenu from './ModernMobileMenu';
+import MenuIcon from '@mui/icons-material/Menu';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import CloseIcon from '@mui/icons-material/Close';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import SearchIcon from '@mui/icons-material/Search';
 
 export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark', toggleTheme }) {
   const { session, profile, isAdmin } = useAuth();
@@ -83,7 +88,7 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
               maxWidth: 180,
             }}
           >
-            <Search size={11} color="rgba(255,255,255,0.35)" aria-hidden="true" />
+            <SearchIcon sx={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }} aria-hidden="true" />
             <input
               placeholder="Search..."
               aria-label="Search"
@@ -140,7 +145,7 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
             onClick={() => setMobileNavOpen(true)}
             aria-label="Open navigation"
           >
-            ☰
+            <MenuIcon sx={{ fontSize: 20 }} />
           </button>
 
           <div
@@ -183,7 +188,7 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
             aria-label="Toggle theme"
             className="btn btn-ghost btn-sm theme-toggle"
           >
-            <span aria-hidden="true" style={{ lineHeight: 1 }}>{theme === 'dark' ? '☀' : '◑'}</span>
+            {theme === 'dark' ? <LightModeIcon sx={{ fontSize: 16 }} /> : <Brightness4Icon sx={{ fontSize: 16 }} />}
             <span className="theme-toggle-label">{theme === 'dark' ? 'Light' : 'Dark'}</span>
           </button>
 
@@ -232,7 +237,7 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
           >
             <div className="mobile-sidebar__top">
               <div className="mobile-sidebar__brand" role="button" tabIndex={0} onClick={() => handleSetTab('dashboard')}>f1 <span style={{ color: 'var(--red)', fontStyle: 'italic' }}>APEX</span></div>
-              <button type="button" className="mobile-sidebar__close" onClick={() => setMobileNavOpen(false)} aria-label="Close navigation">×</button>
+              <button type="button" className="mobile-sidebar__close" onClick={() => setMobileNavOpen(false)} aria-label="Close navigation"><CloseIcon sx={{ fontSize: 18 }} /></button>
             </div>
             <div className="mobile-sidebar__list" role="navigation" aria-label="Tabs">
               {navLinks.map((link) => (
@@ -243,7 +248,7 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
                   onClick={() => handleSetTab(link.id)}
                 >
                   <span>{link.label}</span>
-                  {tab === link.id ? <span aria-hidden="true">›</span> : null}
+                  {tab === link.id ? <ChevronRightIcon sx={{ fontSize: 16 }} aria-hidden="true" /> : null}
                 </button>
               ))}
             </div>

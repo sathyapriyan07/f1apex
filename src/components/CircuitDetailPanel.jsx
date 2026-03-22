@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { db, circuit_detail } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { DriverPhoto } from './Images';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 function TabButton({ id, active, onClick, children }) {
   return (
@@ -200,7 +202,7 @@ export default function CircuitDetailPanel({ circuitId, onClose, onEdit, onDelet
         <div className="detail-tv circuit-tv">
           <div className="detail-tv__topbar">
             <button type="button" className="detail-tv__back" onClick={onClose}>
-              ← Circuits
+              <ArrowBackIcon sx={{ fontSize: 14 }} /> Circuits
             </button>
             <div className="detail-tv__topTitle" title={title}>
               {title}
@@ -238,7 +240,7 @@ export default function CircuitDetailPanel({ circuitId, onClose, onEdit, onDelet
             <div className="detail-tv__content">
               <div className="detail-tv__contentBar">
                 <button type="button" className="detail-tv__back" onClick={onClose}>
-                  ← Back
+                  <ArrowBackIcon sx={{ fontSize: 14 }} /> Back
                 </button>
                 {isAdmin ? (
                   <div style={{ display: 'flex', gap: 6 }}>
@@ -372,7 +374,7 @@ export default function CircuitDetailPanel({ circuitId, onClose, onEdit, onDelet
                           <div className="detail-tv__kvKey">Maps</div>
                           <div className="detail-tv__kvVal">
                             <a className="detail-tv__link" href={`https://www.google.com/maps?q=${circuit.lat},${circuit.lng}`} target="_blank" rel="noreferrer">
-                              Open in Google Maps ↗
+                              Open in Google Maps <OpenInNewIcon sx={{ fontSize: 12, verticalAlign: 'middle' }} />
                             </a>
                           </div>
                         </div>
@@ -393,7 +395,7 @@ export default function CircuitDetailPanel({ circuitId, onClose, onEdit, onDelet
 
                     {circuit.wiki_url ? (
                       <a className="detail-tv__pill" href={circuit.wiki_url} target="_blank" rel="noreferrer">
-                        ↗ Wikipedia
+                        <OpenInNewIcon sx={{ fontSize: 12, verticalAlign: 'middle' }} /> Wikipedia
                       </a>
                     ) : null}
                   </div>

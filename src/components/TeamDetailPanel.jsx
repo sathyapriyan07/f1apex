@@ -1,6 +1,9 @@
 // src/components/TeamDetailPanel.jsx
 import { useEffect, useMemo, useState } from 'react';
 import { db, team_detail } from '../lib/supabase';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 function SectionLabel({ children }) {
   return (
@@ -24,7 +27,7 @@ function TeamHero({ team, teamColor, onClose }) {
         position: 'absolute', top: 16, left: 16, zIndex: 10,
         background: 'none', border: 'none', cursor: 'pointer',
         color: '#fff', fontSize: 22, padding: '4px 8px',
-      }}>←</button>
+      }}><ArrowBackIcon sx={{ fontSize: 20 }} /></button>
 
       {/* Logo */}
       <div style={{
@@ -310,7 +313,7 @@ function TeamStandingsSection({ standings, teamColor }) {
                 fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 20,
                 letterSpacing: '-0.02em', color: isChamp ? '#ffd60a' : '#fff', minWidth: 36,
               }}>P{s.position}</div>
-              {isChamp && <span style={{ fontSize: 14 }}>🏆</span>}
+              {isChamp && <EmojiEventsIcon sx={{ fontSize: 14, color: '#ffd60a' }} />}
               <div style={{ flex: 1 }}>
                 <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
                   <div style={{
@@ -475,7 +478,7 @@ function TeamInfoSection({ team, teamColor }) {
             <a href={team.wiki_url} target="_blank" rel="noreferrer" style={{
               fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 13, color: teamColor,
               display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none',
-            }}>↗ Wikipedia</a>
+            }}><OpenInNewIcon sx={{ fontSize: 14 }} /> Wikipedia</a>
           </div>
         )}
       </div>

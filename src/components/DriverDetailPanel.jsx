@@ -5,6 +5,9 @@ import {
   LineChart, Line, ReferenceLine, CartesianGrid,
 } from 'recharts';
 import { db, driver_career } from '../lib/supabase';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 
 const ordinal = (n) => {
   const s = ['th', 'st', 'nd', 'rd'];
@@ -30,7 +33,7 @@ function DriverHero({ driver, team, teamColor, onClose, previousTeams, onOpenTea
         position: 'absolute', top: 16, left: 16, zIndex: 10,
         background: 'none', border: 'none', cursor: 'pointer',
         color: '#fff', fontSize: 22, padding: '4px 8px',
-      }}>←</button>
+      }}><ArrowBackIcon sx={{ fontSize: 20 }} /></button>
       {(onEdit || onDelete) && (
         <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 10, display: 'flex', gap: 6 }}>
           {onEdit && (
@@ -437,7 +440,7 @@ function ChampionshipsSection({ standings, teamColor }) {
                 fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 22,
                 color: isChamp ? '#ffd60a' : '#fff', letterSpacing: '-0.02em', minWidth: 40,
               }}>P{s.position}</div>
-              {isChamp && <span style={{ fontSize: 16 }}>🏆</span>}
+              {isChamp && <EmojiEventsIcon sx={{ fontSize: 16, color: '#ffd60a' }} />}
               <div style={{ flex: 1 }}>
                 <div style={{
                   height: 4, borderRadius: 2,
@@ -530,7 +533,7 @@ function ResultList({ rows, teamColor, onOpenRace }) {
             )}
           </div>
           {onOpenRace && (
-            <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 14, lineHeight: 1 }}>›</span>
+            <ChevronRightIcon sx={{ fontSize: 14, color: 'rgba(255,255,255,0.2)' }} />
           )}
         </div>
       </div>

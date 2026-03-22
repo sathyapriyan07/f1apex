@@ -1,6 +1,7 @@
 // src/pages/StandingsHub.jsx
 import { useEffect, useState } from 'react';
 import { db } from '../lib/supabase';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
 function P1DriverHero({ entry, teams, onOpen }) {
   if (!entry) return null;
@@ -49,7 +50,7 @@ function P1DriverHero({ entry, teams, onOpen }) {
           <div style={{ fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 17, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>{entry.points}</div>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>PTS</div>
         </div>
-        <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 14, fontWeight: 300 }}>›</span>
+        <ChevronRightIcon sx={{ fontSize: 14, color: 'rgba(255,255,255,0.3)' }} />
       </div>
     </div>
   );
@@ -101,7 +102,7 @@ function DriverStandingsList({ standings, teams, getTeamColor, onOpenDriver }) {
               <div style={{ fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 15, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>{entry.points}</div>
               <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>PTS</div>
             </div>
-            <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 13, fontWeight: 300 }}>›</span>
+            <ChevronRightIcon sx={{ fontSize: 13, color: 'rgba(255,255,255,0.2)' }} />
           </div>
         );
       })}
@@ -155,7 +156,7 @@ function P1TeamHero({ entry, teams, onOpen }) {
           <div style={{ fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 17, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>{entry.points}</div>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>PTS</div>
         </div>
-        <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 14 }}>›</span>
+        <ChevronRightIcon sx={{ fontSize: 14, color: 'rgba(255,255,255,0.25)' }} />
       </div>
     </div>
   );
@@ -211,7 +212,7 @@ function TeamStandingsList({ standings, teams, getTeamColor, onOpenTeam }) {
               <div style={{ fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 15, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>{entry.points}</div>
               <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>PTS</div>
             </div>
-            <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 13 }}>›</span>
+            <ChevronRightIcon sx={{ fontSize: 13, color: 'rgba(255,255,255,0.2)' }} />
           </div>
         );
       })}

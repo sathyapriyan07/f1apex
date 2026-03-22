@@ -5,6 +5,10 @@ import { useCRUD } from '../hooks/useCRUD';
 import { useAuth } from '../hooks/useAuth';
 import Modal from '../components/Modal';
 import DriverDetailPanel from '../components/DriverDetailPanel';
+import GridViewIcon from '@mui/icons-material/GridView';
+import MenuIcon from '@mui/icons-material/Menu';
+import SearchIcon from '@mui/icons-material/Search';
+import PersonIcon from '@mui/icons-material/Person';
 
 export default function DriversPage({ teams, detailId, onOpenDriver, onOpenTeam, onOpenRace, onCloseDetail }) {
   const { isAdmin } = useAuth();
@@ -78,7 +82,7 @@ export default function DriversPage({ teams, detailId, onOpenDriver, onOpenTeam,
             }}
             aria-label="Grid view"
           >
-            ⊞
+            <GridViewIcon sx={{ fontSize: 18 }} />
           </button>
           <button
             onClick={() => setView('list')}
@@ -94,7 +98,7 @@ export default function DriversPage({ teams, detailId, onOpenDriver, onOpenTeam,
             }}
             aria-label="List view"
           >
-            ☰
+            <MenuIcon sx={{ fontSize: 18 }} />
           </button>
         </div>
       </div>
@@ -111,7 +115,7 @@ export default function DriversPage({ teams, detailId, onOpenDriver, onOpenTeam,
             border: '1px solid rgba(255,255,255,0.06)',
           }}
         >
-          <span style={{ color: 'var(--muted)', fontSize: 15 }} aria-hidden="true">🔍</span>
+          <SearchIcon sx={{ fontSize: 16, color: 'var(--muted)' }} aria-hidden="true" />
           <input
             placeholder="Search"
             value={C.search}
@@ -132,7 +136,7 @@ export default function DriversPage({ teams, detailId, onOpenDriver, onOpenTeam,
 
       {C.error && <div className="error-msg" style={{ margin: '0 20px 14px' }}>{C.error}</div>}
 
-      {C.loading ? <Loader /> : filteredDrivers.length === 0 ? <Empty icon="👤" label="No drivers yet" /> : (
+      {C.loading ? <Loader /> : filteredDrivers.length === 0 ? <Empty icon={<PersonIcon sx={{ fontSize: 28, color: 'var(--muted)' }} />} label="No drivers yet" /> : (
         view === 'grid' ? (
           <div className="drivers-grid">
             {filteredDrivers.map((driver) => (
@@ -558,7 +562,7 @@ export function RowActions({ onEdit, onDelete }) {
 export function Empty({ icon, label }) {
   return (
     <div className="empty">
-      <span className="empty-icon">{icon}</span>
+      <div className="empty-icon">{icon}</div>
       <span style={{ fontSize: 13, color: 'var(--muted)' }}>{label}</span>
     </div>
   );
