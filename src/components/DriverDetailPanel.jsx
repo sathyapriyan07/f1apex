@@ -1,8 +1,8 @@
 // src/components/DriverDetailPanel.jsx
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
-  LineChart, Line, ReferenceLine, CartesianGrid,
+  ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, ReferenceLine, CartesianGrid,
 } from 'recharts';
 import { db, driver_career } from '../lib/supabase';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -310,32 +310,126 @@ function SeasonStatsSection({ results, standings, year, teamColor }) {
   );
 }
 
-const ChartTooltip = ({ active, payload, label, suffix = '' }) => {
-  if (!active || !payload?.length) return null;
+const axisStyle = { fontFamily: 'var(--mono)', fontSize: 9, fill: 'rgba(255,255,255,0.3)' };
+
+const Y_VALUES = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0];
+const MAX_PTS  = 25;
+const TOTAL_ROUNDS = 24;
+const CHART_HEIGHT = 220;
+const BAR_MIN_H = 6;
+const STUB_H = 10;
+
+function PointsPerRoundChart({ results, teamColor }) {
+  const currentYear = new Date().getFullYear();
+
+  const seasonResults = useMemo(() =>
+    [...results]
+      .filter(r => Number(r.races?.season_year) === currentYear && !r.races?.sprint)
+      .sort((a, b) => (a.races?.round || 0) - (b.races?.round || 0)),
+  [results, currentYear]);
+
+  const roundSlots = useMemo(() => {
+    const slots = [];
+    for (let i = 1; i <= TOTAL_ROUNDS; i++) {
+      const result = seasonResults.find(r => r.races?.round === i);
+      slots.push({
+        round: i,
+        points: result ? parseFloat(result.points || 0) : null,
+        hasRaced: !!result,
+      });
+    }
+    return slots;
+  }, [seasonResults]);
+
+  const ptsToPx = (pts) => pts <= 0 ? BAR_MIN_H : Math.max((pts / MAX_PTS) * CHART_HEIGHT, BAR_MIN_H);
+  const yPos = (val) => `${((MAX_PTS - val) / MAX_PTS) * 100}%`;
+
   return (
-    <div style={{
-      background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: 8, padding: '8px 12px',
-      fontFamily: 'var(--sans)', fontSize: 12, color: '#fff',
-    }}>
-      <div style={{ color: 'rgba(255,255,255,0.5)', marginBottom: 2 }}>R{label}</div>
-      <div style={{ fontWeight: 700 }}>{payload[0].value}{suffix}</div>
+    <div style={{ background: '#000', padding: '24px 16px 8px', position: 'relative' }}>
+      <div style={{ display: 'flex', alignItems: 'stretch', gap: 0 }}>
+
+        {/* Y Axis */}
+        <div style={{ width: 28, flexShrink: 0, position: 'relative', height: CHART_HEIGHT, marginRight: 6 }}>
+          {Y_VALUES.map(val => (
+            <div key={val} style={{
+              position: 'absolute', right: 2, top: yPos(val),
+              transform: 'translateY(-50%)',
+              fontFamily: 'var(--mono)', fontSize: 9,
+              color: 'rgba(255,255,255,0.5)', fontWeight: 400,
+              lineHeight: 1, textAlign: 'right',
+            }}>{val}</div>
+          ))}
+        </div>
+
+        {/* Chart area */}
+        <div style={{ flex: 1, position: 'relative', height: CHART_HEIGHT, overflow: 'hidden' }}>
+          {/* Grid lines */}
+          {Y_VALUES.map(val => (
+            <div key={val} style={{
+              position: 'absolute', left: 0, right: 0, top: yPos(val),
+              height: 1, background: 'rgba(255,255,255,0.08)',
+              transform: 'translateY(-50%)',
+            }} />
+          ))}
+
+          {/* Bars */}
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0,
+            display: 'flex', alignItems: 'flex-end', gap: 2, height: '100%',
+          }}>
+            {roundSlots.map((slot) => {
+              const scored = slot.hasRaced && slot.points > 0;
+              const raced  = slot.hasRaced && slot.points === 0;
+              const future = !slot.hasRaced;
+              const barH   = scored ? ptsToPx(slot.points) : raced ? BAR_MIN_H : STUB_H;
+              const barColor = scored ? teamColor : 'rgba(255,255,255,0.15)';
+              return (
+                <div key={slot.round} style={{
+                  flex: 1, display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'flex-end', height: '100%',
+                }}>
+                  <div style={{
+                    width: future ? 6 : '100%',
+                    height: barH,
+                    background: barColor,
+                    borderRadius: future || raced ? '4px' : '3px 3px 0 0',
+                    minWidth: 3,
+                  }} />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Round labels */}
+      <div style={{ display: 'flex', marginLeft: 34, gap: 2, marginTop: 6 }}>
+        {roundSlots.map(slot => (
+          <div key={slot.round} style={{
+            flex: 1, textAlign: 'center',
+            fontFamily: 'var(--mono)', fontSize: 8,
+            color: 'rgba(255,255,255,0.25)', lineHeight: 1,
+          }}>
+            {String(slot.round).padStart(2, '0')}
+          </div>
+        ))}
+      </div>
+
+      {/* Rounds label */}
+      <div style={{
+        marginTop: 10,
+        fontFamily: 'var(--sans)', fontWeight: 800,
+        fontSize: 16, color: '#fff', letterSpacing: '-0.01em',
+      }}>Rounds</div>
     </div>
   );
-};
-
-const axisStyle = { fontFamily: 'var(--mono)', fontSize: 9, fill: 'rgba(255,255,255,0.3)' };
+}
 
 function PerformanceCharts({ results, teamColor }) {
   const currentYear = new Date().getFullYear();
   const seasonResults = [...results]
     .filter(r => Number(r.races?.season_year) === currentYear && !r.races?.sprint)
     .sort((a, b) => (a.races?.round || 0) - (b.races?.round || 0));
-
-  const pointsData = seasonResults.map(r => ({
-    round: r.races?.round,
-    pts: parseFloat(r.points || 0),
-  }));
 
   const posData = seasonResults
     .filter(r => r.position)
@@ -348,35 +442,14 @@ function PerformanceCharts({ results, teamColor }) {
   );
 
   return (
-    <div style={{ padding: '28px 16px 0' }}>
-      <SectionLabel>PERFORMANCE CHARTS</SectionLabel>
+    <div style={{ padding: '28px 0 0' }}>
+      <div style={{ padding: '0 16px' }}><SectionLabel>PERFORMANCE CHARTS</SectionLabel></div>
 
-      {/* Points per round — Bar chart */}
-      <div style={{ background: '#1a1a1a', borderRadius: 16, padding: '16px 16px 12px', marginTop: 14 }}>
-        <div style={{
-          fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 12,
-          color: 'rgba(255,255,255,0.4)', marginBottom: 14,
-          textTransform: 'uppercase', letterSpacing: '0.06em',
-        }}>Points Per Round — {currentYear}</div>
-        {pointsData.length === 0 ? noData : (
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={pointsData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barCategoryGap="20%">
-              <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="round" tick={axisStyle} tickLine={false} axisLine={false} />
-              <YAxis tick={axisStyle} tickLine={false} axisLine={false} domain={[0, 26]} ticks={[0, 10, 20, 25]} />
-              <Tooltip content={<ChartTooltip suffix="pts" />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-              <Bar dataKey="pts" radius={[3, 3, 0, 0]}>
-                {pointsData.map((d, i) => (
-                  <Cell key={i} fill={d.pts > 0 ? teamColor : 'rgba(255,255,255,0.1)'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        )}
-      </div>
+      {/* Points per round — custom chart */}
+      <PointsPerRoundChart results={results} teamColor={teamColor} />
 
-      {/* Finishing positions — Line chart (inverted: P1 at top) */}
-      <div style={{ background: '#1a1a1a', borderRadius: 16, padding: '16px 16px 12px', marginTop: 10 }}>
+      {/* Finishing positions — Line chart */}
+      <div style={{ background: '#1a1a1a', borderRadius: 16, padding: '16px 16px 12px', margin: '10px 16px 0' }}>
         <div style={{
           fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 12,
           color: 'rgba(255,255,255,0.4)', marginBottom: 14,
@@ -391,7 +464,6 @@ function PerformanceCharts({ results, teamColor }) {
                 reversed domain={[1, 20]} ticks={[1, 5, 10, 15, 20]}
                 tickFormatter={v => `P${v}`} tick={axisStyle} tickLine={false} axisLine={false}
               />
-              <Tooltip content={<ChartTooltip suffix="" />} cursor={{ stroke: 'rgba(255,255,255,0.1)' }} />
               <ReferenceLine y={3} stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
               <ReferenceLine y={10} stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
               <Line
