@@ -1,56 +1,563 @@
 // src/components/DriverDetailPanel.jsx
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { db, driver_career } from '../lib/supabase';
 
-function sum(nums) {
-  return (nums || []).reduce((acc, n) => acc + (Number(n) || 0), 0);
-}
-
 const NATIONALITY_FLAGS = {
-  British: '🇬🇧',
-  German: '🇩🇪',
-  Spanish: '🇪🇸',
-  Finnish: '🇫🇮',
-  Brazilian: '🇧🇷',
-  French: '🇫🇷',
-  Australian: '🇦🇺',
-  Dutch: '🇳🇱',
-  Mexican: '🇲🇽',
-  Monegasque: '🇲🇨',
-  Canadian: '🇨🇦',
-  Italian: '🇮🇹',
-  Thai: '🇹🇭',
-  Japanese: '🇯🇵',
-  Danish: '🇩🇰',
-  Chinese: '🇨🇳',
-  American: '🇺🇸',
-  Swiss: '🇨🇭',
-  Austrian: '🇦🇹',
-  Argentine: '🇦🇷',
-  'New Zealander': '🇳🇿',
-  Polish: '🇵🇱',
+  British: '\u{1F1EC}\u{1F1E7}',
+  German: '\u{1F1E9}\u{1F1EA}',
+  Spanish: '\u{1F1EA}\u{1F1F8}',
+  Finnish: '\u{1F1EB}\u{1F1EE}',
+  Brazilian: '\u{1F1E7}\u{1F1F7}',
+  French: '\u{1F1EB}\u{1F1F7}',
+  Australian: '\u{1F1E6}\u{1F1FA}',
+  Dutch: '\u{1F1F3}\u{1F1F1}',
+  Mexican: '\u{1F1F2}\u{1F1FD}',
+  Monegasque: '\u{1F1F2}\u{1F1E8}',
+  Canadian: '\u{1F1E8}\u{1F1E6}',
+  Italian: '\u{1F1EE}\u{1F1F9}',
+  Thai: '\u{1F1F9}\u{1F1ED}',
+  Japanese: '\u{1F1EF}\u{1F1F5}',
+  Danish: '\u{1F1E9}\u{1F1F0}',
+  Chinese: '\u{1F1E8}\u{1F1F3}',
+  American: '\u{1F1FA}\u{1F1F8}',
+  Swiss: '\u{1F1E8}\u{1F1ED}',
+  Austrian: '\u{1F1E6}\u{1F1F9}',
+  Argentine: '\u{1F1E6}\u{1F1F7}',
+  'New Zealander': '\u{1F1F3}\u{1F1FF}',
+  Polish: '\u{1F1F5}\u{1F1F1}',
 };
 
 function nationalityToFlag(nationality) {
-  return NATIONALITY_FLAGS[nationality] || '🏳';
+  return NATIONALITY_FLAGS[nationality] || '\u{1F3F3}';
 }
 
-function InfoIcon({ children }) {
+function displayNationalityName(nationality) {
+  if (!nationality) return '—';
+  if (nationality === 'British') return 'United Kingdom';
+  if (nationality === 'Dutch') return 'Netherlands';
+  return nationality;
+}
+
+const PLACE_OF_BIRTH = {
+  British: "King's Lynn, England",
+  German: 'Hürth, Germany',
+  Spanish: 'Oviedo, Spain',
+  Finnish: 'Vantaa, Finland',
+  Brazilian: 'São Paulo, Brazil',
+  Dutch: 'Hasselt, Belgium',
+  French: 'Rouen, France',
+  Australian: 'Brisbane, Australia',
+  Mexican: 'Guadalajara, Mexico',
+  Monegasque: 'Monte Carlo, Monaco',
+  Italian: 'Rome, Italy',
+  Thai: 'Bangkok, Thailand',
+};
+
+const ordinal = (n) => {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = Number(n) % 100;
+  return s[(v - 20) % 10] || s[v] || s[0];
+};
+
+function DriverHero({ driver, team, teamColor, onClose }) {
+  const strokeColor =
+    String(teamColor || '')
+      .toLowerCase()
+      .trim() === '#27f4d2'
+      ? 'rgba(0,0,0,0.2)'
+      : 'rgba(255,255,255,0.2)';
+
   return (
     <div
       style={{
-        width: 40,
-        height: 40,
-        borderRadius: '50%',
-        background: 'rgba(255,255,255,0.06)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: 18,
-        flexShrink: 0,
+        position: 'relative',
+        width: '100%',
+        minHeight: '100vh',
+        overflow: 'hidden',
+        background: `linear-gradient(180deg, ${teamColor} 0%, ${teamColor}dd 60%, #0a0a0a 100%)`,
       }}
     >
-      {children}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 0,
+          backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px)',
+          backgroundSize: '12px 12px',
+          pointerEvents: 'none',
+        }}
+      />
+
+      <div
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -45%)',
+          fontFamily: 'var(--sans)',
+          fontWeight: 900,
+          fontSize: 'clamp(200px, 55vw, 320px)',
+          lineHeight: 1,
+          letterSpacing: '-0.05em',
+          WebkitTextStroke: `3px ${strokeColor}`,
+          color: 'transparent',
+          zIndex: 1,
+          userSelect: 'none',
+          pointerEvents: 'none',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {driver.number || '00'}
+      </div>
+
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          gap: 6,
+          zIndex: 2,
+        }}
+        aria-hidden="true"
+      >
+        {[0, 1].map((i) => (
+          <div
+            key={i}
+            style={{
+              width: 6,
+              height: 80,
+              background: 'rgba(255,255,255,0.5)',
+              clipPath: 'polygon(30% 0%, 70% 0%, 100% 100%, 0% 100%)',
+            }}
+          />
+        ))}
+      </div>
+
+      {driver.image_url ? (
+        <img
+          src={driver.image_url}
+          alt=""
+          style={{
+            position: 'absolute',
+            bottom: '12%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            height: '75%',
+            width: 'auto',
+            objectFit: 'contain',
+            objectPosition: 'bottom center',
+            zIndex: 3,
+            maskImage: 'linear-gradient(to bottom, black 70%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 70%, transparent 100%)',
+          }}
+          onError={(e) => {
+            e.target.style.display = 'none';
+          }}
+        />
+      ) : null}
+
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '30%',
+          zIndex: 4,
+          background: 'linear-gradient(to top, #0a0a0a 0%, transparent 100%)',
+        }}
+        aria-hidden="true"
+      />
+
+      <button
+        onClick={onClose}
+        style={{
+          position: 'absolute',
+          top: 16,
+          left: 20,
+          zIndex: 10,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'white',
+          fontSize: 22,
+          padding: 0,
+        }}
+        aria-label="Back"
+      >
+        ←
+      </button>
+
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '18%',
+          left: 0,
+          right: 0,
+          zIndex: 5,
+          textAlign: 'center',
+          padding: '0 20px',
+        }}
+      >
+        <div
+          style={{
+            fontFamily: 'Georgia, serif',
+            fontStyle: 'italic',
+            fontWeight: 400,
+            fontSize: 'clamp(32px, 9vw, 52px)',
+            color: '#fff',
+            lineHeight: 1.1,
+            letterSpacing: '-0.01em',
+          }}
+        >
+          {driver.first_name}
+        </div>
+
+        <div
+          style={{
+            fontFamily: 'var(--sans)',
+            fontWeight: 900,
+            fontSize: 'clamp(44px, 13vw, 72px)',
+            color: '#fff',
+            lineHeight: 0.9,
+            letterSpacing: '-0.02em',
+            textTransform: 'uppercase',
+          }}
+        >
+          {driver.last_name}
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 12,
+            marginTop: 12,
+            fontFamily: 'var(--sans)',
+            fontWeight: 600,
+            fontSize: 14,
+            color: '#fff',
+          }}
+        >
+          <span>{nationalityToFlag(driver.nationality)}</span>
+          <span>{displayNationalityName(driver.nationality)}</span>
+          <span style={{ color: 'rgba(255,255,255,0.4)' }}>|</span>
+          <span>{team?.name || '—'}</span>
+          <span style={{ color: 'rgba(255,255,255,0.4)' }}>|</span>
+          <span>{driver.number || '—'}</span>
+        </div>
+      </div>
+
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '6%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 5,
+          display: 'flex',
+          gap: 6,
+        }}
+        aria-hidden="true"
+      >
+        {[0, 1].map((i) => (
+          <div
+            key={i}
+            style={{
+              width: 8,
+              height: 52,
+              background: 'rgba(255,255,255,0.7)',
+              clipPath: 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)',
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SeasonStats({ results, standings, year }) {
+  const seasonResults = (results || []).filter(
+    (r) => Number(r.races?.season_year) === Number(year) && !r.races?.sprint,
+  );
+  const sprintResults = (results || []).filter(
+    (r) => Number(r.races?.season_year) === Number(year) && Boolean(r.races?.sprint),
+  );
+  const seasonStanding = (standings || []).find((s) => Number(s.season_year) === Number(year));
+
+  const gpRaces = seasonResults.length;
+  const gpPoints = seasonResults.reduce((s, r) => s + parseFloat(r.points || 0), 0);
+  const gpWins = seasonResults.filter((r) => r.position === 1).length;
+  const gpPodiums = seasonResults.filter((r) => r.position && r.position <= 3).length;
+  const gpPoles = seasonResults.filter((r) => r.grid_position === 1).length;
+  const gpTop10s = seasonResults.filter((r) => r.position && r.position <= 10).length;
+  const gpFL = seasonResults.filter((r) => r.fastest_lap).length;
+  const gpDNFs = seasonResults.filter(
+    (r) => r.status && !String(r.status).includes('Finish') && !String(r.status).includes('Lap'),
+  ).length;
+
+  const spRaces = sprintResults.length;
+  const spPoints = sprintResults.reduce((s, r) => s + parseFloat(r.points || 0), 0);
+  const spWins = sprintResults.filter((r) => r.position === 1).length;
+  const spPodiums = sprintResults.filter((r) => r.position && r.position <= 3).length;
+  const spPoles = sprintResults.filter((r) => r.grid_position === 1).length;
+  const spTop10s = sprintResults.filter((r) => r.position && r.position <= 10).length;
+
+  const StatRow = ({ left, right }) => (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 0,
+        marginBottom: 20,
+      }}
+    >
+      {[left, right].map((stat, i) => (
+        <div key={i} style={{ paddingRight: i === 0 ? 16 : 0 }}>
+          <div
+            style={{
+              fontFamily: 'var(--sans)',
+              fontWeight: 400,
+              fontSize: 13,
+              color: 'rgba(255,255,255,0.5)',
+              marginBottom: 4,
+            }}
+          >
+            {stat.label}
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--sans)',
+              fontWeight: 900,
+              fontSize: 36,
+              color: '#fff',
+              letterSpacing: '-0.03em',
+              lineHeight: 1,
+            }}
+          >
+            {stat.value ?? 0}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const Divider = () => (
+    <div
+      style={{
+        height: 1,
+        background: 'rgba(255,255,255,0.12)',
+        margin: '4px 0 24px',
+      }}
+    />
+  );
+
+  return (
+    <div style={{ background: '#0a0a0a', padding: '20px 20px 8px' }}>
+      <div
+        style={{
+          fontFamily: 'var(--sans)',
+          fontWeight: 900,
+          fontSize: 20,
+          letterSpacing: '-0.01em',
+          textTransform: 'uppercase',
+          color: '#fff',
+          marginBottom: 20,
+        }}
+      >
+        {year} SEASON
+      </div>
+
+      <StatRow
+        left={{
+          label: 'Season Position',
+          value: seasonStanding?.position ? `${seasonStanding.position}${ordinal(seasonStanding.position)}` : '—',
+        }}
+        right={{
+          label: 'Season Points',
+          value: seasonStanding?.points ?? gpPoints,
+        }}
+      />
+      <Divider />
+
+      <StatRow
+        left={{ label: 'Grand Prix Races', value: gpRaces }}
+        right={{ label: 'Grand Prix Points', value: Math.round(gpPoints) }}
+      />
+      <StatRow left={{ label: 'Grand Prix Wins', value: gpWins }} right={{ label: 'Grand Prix Podiums', value: gpPodiums }} />
+      <StatRow left={{ label: 'Grand Prix Poles', value: gpPoles }} right={{ label: 'Grand Prix Top 10s', value: gpTop10s }} />
+      <StatRow left={{ label: 'DHL Fastest Laps', value: gpFL }} right={{ label: 'DNFs', value: gpDNFs }} />
+      <Divider />
+
+      {spRaces > 0 ? (
+        <>
+          <StatRow left={{ label: 'Sprint Races', value: spRaces }} right={{ label: 'Sprint Points', value: Math.round(spPoints) }} />
+          <StatRow left={{ label: 'Sprint Wins', value: spWins }} right={{ label: 'Sprint Podiums', value: spPodiums }} />
+          <StatRow left={{ label: 'Sprint Poles', value: spPoles }} right={{ label: 'Sprint Top 10s', value: spTop10s }} />
+          <Divider />
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+function CareerStats({ results, standings }) {
+  const bestFinish = (results || []).reduce((b, r) => (r.position && (!b || r.position < b) ? r.position : b), null);
+  const bestFinishCount = bestFinish ? (results || []).filter((r) => r.position === bestFinish).length : 0;
+  const bestGrid = (results || []).reduce((b, r) => (r.grid_position && (!b || r.grid_position < b) ? r.grid_position : b), null);
+  const bestGridCount = bestGrid ? (results || []).filter((r) => r.grid_position === bestGrid).length : 0;
+
+  const totalRaces = (results || []).length;
+  const totalPoints = (results || []).reduce((s, r) => s + parseFloat(r.points || 0), 0);
+  const totalPodiums = (results || []).filter((r) => r.position && r.position <= 3).length;
+  const totalPoles = (results || []).filter((r) => r.grid_position === 1).length;
+  const championships = (standings || []).filter((s) => Number(s.position) === 1).length;
+  const totalDNFs = (results || []).filter(
+    (r) => r.status && !String(r.status).includes('Finish') && !String(r.status).includes('Lap'),
+  ).length;
+
+  const rows = [
+    { label: 'Grand Prix Entered', value: totalRaces },
+    { label: 'Career Points', value: Math.round(totalPoints) },
+    { label: 'Highest Race Finish', value: bestFinish ? `${bestFinish} (x${bestFinishCount})` : '—' },
+    { label: 'Podiums', value: totalPodiums },
+    { label: 'Highest Grid Position', value: bestGrid ? `${bestGrid} (x${bestGridCount})` : '—' },
+    { label: 'Pole Positions', value: totalPoles },
+    { label: 'World Championships', value: championships },
+    { label: 'DNFs', value: totalDNFs },
+  ];
+
+  return (
+    <div style={{ background: '#0a0a0a', padding: '0 20px 24px' }}>
+      <div
+        style={{
+          background: '#131313',
+          borderRadius: 12,
+          overflow: 'hidden',
+          border: '1px solid rgba(255,255,255,0.06)',
+        }}
+      >
+        <div style={{ padding: '16px 20px 12px' }}>
+          <div
+            style={{
+              fontFamily: 'var(--sans)',
+              fontWeight: 900,
+              fontSize: 18,
+              textTransform: 'uppercase',
+              letterSpacing: '-0.01em',
+              color: '#fff',
+            }}
+          >
+            CAREER STATS
+          </div>
+        </div>
+
+        {rows.map((row) => (
+          <div
+            key={row.label}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 20px',
+              borderTop: '1px solid rgba(255,255,255,0.07)',
+            }}
+          >
+            <span style={{ fontFamily: 'var(--sans)', fontWeight: 400, fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>
+              {row.label}
+            </span>
+            <span style={{ fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 24, color: '#fff', letterSpacing: '-0.02em' }}>
+              {row.value ?? 0}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StripeDivider() {
+  return (
+    <div style={{ background: '#0a0a0a', padding: 0, overflow: 'hidden' }}>
+      <div
+        style={{
+          width: '100%',
+          height: 14,
+          background: 'var(--red)',
+          clipPath: 'polygon(0 0, 100% 0, 95% 100%, 0% 100%)',
+          marginBottom: 0,
+        }}
+      />
+    </div>
+  );
+}
+
+function Biography({ driver }) {
+  const dob = driver?.dob
+    ? new Date(driver.dob)
+        .toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        })
+        .replace(/\//g, '/')
+    : '—';
+
+  const placeOfBirth = PLACE_OF_BIRTH[driver?.nationality] || driver?.nationality || '—';
+
+  return (
+    <div style={{ background: '#0a0a0a', padding: '24px 20px 40px' }}>
+      <div
+        style={{
+          fontFamily: 'var(--sans)',
+          fontWeight: 900,
+          fontSize: 28,
+          textTransform: 'uppercase',
+          letterSpacing: '-0.01em',
+          color: '#fff',
+          marginBottom: 24,
+        }}
+      >
+        BIOGRAPHY
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px 16px' }}>
+        {[
+          { label: 'Date of Birth', value: dob },
+          { label: 'Place of Birth', value: placeOfBirth },
+          { label: 'Nationality', value: driver?.nationality || '—' },
+          { label: 'Car Number', value: driver?.number || '—' },
+        ].map(({ label, value }) => (
+          <div key={label}>
+            <div
+              style={{
+                fontFamily: 'var(--sans)',
+                fontWeight: 400,
+                fontSize: 12,
+                color: 'rgba(255,255,255,0.45)',
+                marginBottom: 6,
+              }}
+            >
+              {label}
+            </div>
+            <div
+              style={{
+                fontFamily: 'var(--sans)',
+                fontWeight: 700,
+                fontSize: 20,
+                color: '#fff',
+                letterSpacing: '-0.01em',
+                lineHeight: 1.2,
+              }}
+            >
+              {value}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -62,10 +569,10 @@ export default function DriverDetailPanel({ driverId, onClose, onOpenTeamDetail,
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const chartRef = useRef(null);
-
   useEffect(() => {
-    function onKey(e) { if (e.key === 'Escape') onClose?.(); }
+    function onKey(e) {
+      if (e.key === 'Escape') onClose?.();
+    }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
@@ -78,6 +585,7 @@ export default function DriverDetailPanel({ driverId, onClose, onOpenTeamDetail,
   }, [mode]);
 
   useEffect(() => {
+    if (!driverId) return undefined;
     let alive = true;
     (async () => {
       setLoading(true);
@@ -88,448 +596,89 @@ export default function DriverDetailPanel({ driverId, onClose, onOpenTeamDetail,
         driver_career.standings(driverId),
       ]);
       if (!alive) return;
-      if (d.error) { setError(d.error.message); setLoading(false); return; }
-      if (rr.error) { setError(rr.error.message); setLoading(false); return; }
-      if (ss.error) { setError(ss.error.message); setLoading(false); return; }
+      if (d.error) {
+        setError(d.error.message);
+        setLoading(false);
+        return;
+      }
+      if (rr.error) {
+        setError(rr.error.message);
+        setLoading(false);
+        return;
+      }
+      if (ss.error) {
+        setError(ss.error.message);
+        setLoading(false);
+        return;
+      }
       setDriver(d.data);
       setResults(rr.data || []);
       setStandings(ss.data || []);
       setLoading(false);
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [driverId]);
 
   const team = driver?.teams || null;
-  const teamColor = team?.team_color || '#ffffff';
-
-  const computed = useMemo(() => {
-    const years = (results || []).map((r) => r.races?.season_year).filter(Boolean);
-    const debutYear = years.length ? Math.min(...years) : null;
-    const totalRaces = (results || []).length;
-    const totalPoints = sum((results || []).map((r) => r.points));
-    const totalWins = (results || []).filter((r) => r.position === 1).length;
-    const totalPodiums = (results || []).filter((r) => r.position != null && r.position <= 3).length;
-    const totalPoles = (results || []).filter((r) => r.grid_position === 1).length;
-    const topTens = (results || []).filter((r) => r.position != null && r.position <= 10).length;
-    const totalDNFs = (results || []).filter((r) => {
-      const st = String(r.status || '');
-      return st && !st.includes('Finished') && !st.includes('Lap');
-    }).length;
-    return { debutYear, totalRaces, totalPoints, totalWins, totalPodiums, totalPoles, topTens, totalDNFs };
-  }, [results]);
-
-  const championships = useMemo(() => (standings || []).filter((s) => Number(s.position) === 1).length, [standings]);
+  const teamColor = team?.team_color || '#e8002d';
 
   const currentYear = new Date().getFullYear();
-  const chartYear = useMemo(() => {
-    const inCurrent = (results || []).some((r) => Number(r.races?.season_year) === Number(currentYear));
-    if (inCurrent) return currentYear;
+  const statsYear = useMemo(() => {
+    const hasCurrent = (results || []).some((r) => Number(r.races?.season_year) === Number(currentYear));
+    if (hasCurrent) return currentYear;
     const years = (results || []).map((r) => Number(r.races?.season_year)).filter(Boolean);
     return years.length ? Math.max(...years) : currentYear;
   }, [results, currentYear]);
 
-  const currentSeasonResults = useMemo(() => {
-    return (results || [])
-      .filter((r) => Number(r.races?.season_year) === Number(chartYear))
-      .slice()
-      .sort((a, b) => (Number(a.races?.round) || 0) - (Number(b.races?.round) || 0));
-  }, [results, chartYear]);
+  // Keep prop for compatibility with existing callers.
+  void onOpenTeamDetail;
 
-  const sortedResults = useMemo(() => {
-    const list = [...(results || [])];
-    list.sort((a, b) => new Date(a.races?.date || 0).getTime() - new Date(b.races?.date || 0).getTime());
-    return list;
-  }, [results]);
-  const firstEntry = sortedResults[0] || null;
-  const firstWin = sortedResults.find((r) => r.position === 1) || null;
+  if (!driverId) return null;
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span className="spinner spinner-lg" />
+      <div
+        style={{
+          background: '#0a0a0a',
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingBottom: 80,
+        }}
+      >
+        <div style={{ fontFamily: 'var(--sans)', color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>Loading driver…</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ minHeight: '100vh', background: '#000', padding: 20 }}>
-        <div className="error-msg">{error}</div>
+      <div style={{ background: '#0a0a0a', minHeight: '100vh', padding: 20, paddingBottom: 80 }}>
+        <div style={{ fontFamily: 'var(--sans)', color: 'rgba(255,255,255,0.75)', fontSize: 14, marginBottom: 10 }}>Couldn’t load driver</div>
+        <div style={{ fontFamily: 'var(--mono)', color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>{error}</div>
       </div>
     );
   }
 
   if (!driver) return null;
 
-  const flagEmoji = nationalityToFlag(driver.nationality);
-
-  const infoRows = [
-    {
-      icon: (
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.06)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 18,
-          }}
-        >
-          🚗
-        </div>
-      ),
-      value: driver.number || '—',
-      valueColor: teamColor,
-      valueFontSize: 26,
-      valueStyle: { fontStyle: 'italic', fontWeight: 900, letterSpacing: '-0.02em' },
-      label: 'Driver Code',
-      extra: (
-        <span
-          style={{
-            fontFamily: 'var(--mono)',
-            fontWeight: 700,
-            fontSize: 18,
-            color: '#fff',
-            letterSpacing: '0.04em',
-            marginLeft: 8,
-          }}
-        >
-          {driver.code || '—'}
-        </span>
-      ),
-    },
-    {
-      icon: team?.logo_url ? (
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.06)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 8,
-          }}
-        >
-          <img
-            src={team.logo_url}
-            alt=""
-            style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
-            onError={(e) => (e.currentTarget.style.display = 'none')}
-          />
-        </div>
-      ) : (
-        <div style={{ width: 40, height: 40, fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          🏎
-        </div>
-      ),
-      value: team?.name || '—',
-      label: 'Team',
-      onClick: () => onOpenTeamDetail?.(team?.id),
-      clickable: !!team?.id,
-    },
-    {
-      icon: <InfoIcon>🏁</InfoIcon>,
-      value: firstEntry ? `${firstEntry.races?.season_year} ${firstEntry.races?.name}` : '—',
-      label: 'First Entry',
-    },
-    {
-      icon: <InfoIcon>🥇</InfoIcon>,
-      value: firstWin ? `${firstWin.races?.season_year} ${firstWin.races?.name}` : '—',
-      label: 'First Win',
-    },
-    {
-      icon: <InfoIcon>🏆</InfoIcon>,
-      value: String(championships || 0).padStart(2, '0'),
-      label: 'World Championships',
-    },
-    {
-      icon: <InfoIcon>📅</InfoIcon>,
-      value: driver.dob ? new Date(driver.dob).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—',
-      label: 'Date of Birth',
-    },
-    {
-      icon: (
-        <div style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
-          {flagEmoji}
-        </div>
-      ),
-      value: driver.nationality || '—',
-      label: 'Country',
-    },
-  ];
-
   return (
-    <div style={{ background: '#000', minHeight: '100vh', paddingBottom: 100 }}>
-      {/* ── HERO ── */}
-      <div style={{ position: 'relative', width: '100%', minHeight: '100vh', background: '#000', overflow: 'hidden' }}>
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            zIndex: 0,
-            background: `radial-gradient(
-              ellipse at 70% 30%,
-              ${teamColor}60 0%,
-              ${teamColor}20 35%,
-              transparent 65%
-            )`,
-          }}
-          aria-hidden="true"
-        />
+    <div style={{ background: '#0a0a0a', minHeight: '100vh', paddingBottom: 80 }}>
+      <DriverHero driver={driver} team={team} teamColor={teamColor} onClose={onClose} />
 
-        <div
-          style={{
-            position: 'absolute',
-            right: -40,
-            bottom: '20%',
-            width: 200,
-            height: 200,
-            zIndex: 0,
-            background: 'radial-gradient(circle, rgba(255,160,0,0.2) 0%, transparent 70%)',
-            pointerEvents: 'none',
-          }}
-          aria-hidden="true"
-        />
-
-        {driver.image_url ? (
-          <img
-            src={driver.image_url}
-            alt=""
-            style={{
-              position: 'absolute',
-              right: -20,
-              top: 0,
-              height: '100%',
-              width: '80%',
-              objectFit: 'cover',
-              objectPosition: 'top center',
-              zIndex: 1,
-              maskImage: 'linear-gradient(to bottom, black 55%, transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to bottom, black 55%, transparent 100%)',
-            }}
-            onError={(e) => (e.currentTarget.style.display = 'none')}
-          />
-        ) : null}
-
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            zIndex: 2,
-            background: 'linear-gradient(to right, rgba(0,0,0,0.88) 30%, rgba(0,0,0,0.15) 70%, transparent 100%)',
-          }}
-          aria-hidden="true"
-        />
-
-        <button
-          onClick={onClose}
-          type="button"
-          style={{
-            position: 'relative',
-            zIndex: 10,
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'white',
-            fontSize: 22,
-            padding: '16px 20px',
-            display: 'block',
-          }}
-          aria-label="Back"
-        >
-          ←
-        </button>
-
-        <div style={{ position: 'relative', zIndex: 10, padding: '4px 24px 32px' }}>
-          <div style={{ fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 38, letterSpacing: '-0.03em', color: '#fff', lineHeight: 1, marginBottom: 2 }}>
-            {driver.first_name}
-          </div>
-          <div style={{ fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 38, letterSpacing: '-0.03em', color: teamColor, lineHeight: 1, marginBottom: 8 }}>
-            {driver.last_name}
-          </div>
-
-          <div style={{ fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 28 }}>
-            Since Debut {computed.debutYear || '—'} - {new Date().getFullYear()}
-          </div>
-
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
-              <span style={{ fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 52, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1 }}>
-                {computed.totalRaces}
-              </span>
-              <span style={{ fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 16, color: 'rgba(255,255,255,0.45)' }}>GPs</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-              <span style={{ fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 52, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1 }}>
-                {Math.round(computed.totalPoints)}
-              </span>
-              <span style={{ fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 16, color: 'rgba(255,255,255,0.45)' }}>PTS</span>
-            </div>
-          </div>
-
-          {[
-            { icon: '🏆', value: computed.totalWins, label: 'Wins' },
-            { icon: '📊', value: computed.totalPodiums, label: 'Podiums' },
-            { icon: '🎯', value: computed.totalPoles, label: 'Poles' },
-            { icon: '↑', value: computed.topTens, label: 'Top 10s' },
-            { icon: '⊘', value: computed.totalDNFs, label: 'DNFs' },
-          ].map(({ icon, value, label }) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-              <div style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: 'rgba(255,255,255,0.55)', flexShrink: 0 }}>
-                {icon}
-              </div>
-              <span style={{ fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 22, color: '#fff', letterSpacing: '-0.02em', minWidth: 48 }}>
-                {String(value ?? 0).padStart(2, '0')}
-              </span>
-              <span style={{ fontFamily: 'var(--sans)', fontWeight: 400, fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>
-                {label}
-              </span>
-            </div>
-          ))}
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-            <button
-              onClick={() => chartRef.current?.scrollIntoView({ behavior: 'smooth' })}
-              type="button"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                background: 'rgba(255,255,255,0.12)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                border: 'none',
-                borderRadius: 980,
-                padding: '12px 22px',
-                cursor: 'pointer',
-                fontFamily: 'var(--sans)',
-                fontWeight: 600,
-                fontSize: 14,
-                color: '#fff',
-              }}
-            >
-              <span aria-hidden="true">📊</span> Timeline
-            </button>
-          </div>
+      <div style={{ background: '#0a0a0a', padding: '24px 20px 8px' }}>
+        <div style={{ fontFamily: 'var(--sans)', fontWeight: 900, fontSize: 28, letterSpacing: '-0.01em', textTransform: 'uppercase', color: '#fff' }}>
+          STATISTICS
         </div>
       </div>
 
-      {/* ── BAR CHART ── */}
-      <div ref={chartRef} style={{ background: '#000', padding: '24px 20px 16px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 0 }}>
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              height: 160,
-              marginRight: 8,
-              flexShrink: 0,
-              paddingBottom: 20,
-            }}
-          >
-            {[25, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0].map((v) => (
-              <span key={v} style={{ fontFamily: 'var(--mono)', fontSize: 8, color: 'rgba(255,255,255,0.25)', lineHeight: 1 }}>
-                {v}
-              </span>
-            ))}
-          </div>
-
-          <div style={{ flex: 1, overflow: 'hidden' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', height: 140, gap: 3 }}>
-              {currentSeasonResults.map((r, i) => {
-                const pts = parseFloat(r.points || 0);
-                const maxPts = 25;
-                const h = Math.max((pts / maxPts) * 130, pts > 0 ? 4 : 2);
-                return (
-                  <div
-                    key={`${r.id}-${i}`}
-                    style={{
-                      flex: 1,
-                      minWidth: 6,
-                      height: h,
-                      background: pts > 0 ? teamColor : 'rgba(255,255,255,0.1)',
-                      borderRadius: '2px 2px 0 0',
-                      transition: 'height 0.4s ease',
-                    }}
-                  />
-                );
-              })}
-            </div>
-
-            <div style={{ display: 'flex', gap: 3, marginTop: 4, alignItems: 'center' }}>
-              <span style={{ fontFamily: 'var(--sans)', fontSize: 9, color: 'rgba(255,255,255,0.35)', marginRight: 4, flexShrink: 0 }}>
-                Rounds
-              </span>
-              {currentSeasonResults.map((r, i) => (
-                <span key={`${r.id}-round-${i}`} style={{ flex: 1, minWidth: 6, fontFamily: 'var(--mono)', fontSize: 7, color: 'rgba(255,255,255,0.2)', textAlign: 'center' }}>
-                  {String(r.races?.round || i + 1).padStart(2, '0')}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── INFO ROWS ── */}
-      <div style={{ background: '#000', paddingTop: 8 }}>
-        {infoRows.map((row, idx) => (
-          <div
-            key={idx}
-            onClick={row.onClick}
-            role={row.clickable ? 'button' : undefined}
-            tabIndex={row.clickable ? 0 : undefined}
-            onKeyDown={(e) => {
-              if (!row.clickable) return;
-              if (e.key === 'Enter' || e.key === ' ') row.onClick?.();
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16,
-              padding: '16px 24px',
-              borderBottom: '1px solid rgba(255,255,255,0.07)',
-              cursor: row.clickable ? 'pointer' : 'default',
-              transition: row.clickable ? 'background 0.15s' : 'none',
-            }}
-            onMouseEnter={(e) => {
-              if (row.clickable) e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
-            }}
-            onMouseLeave={(e) => {
-              if (row.clickable) e.currentTarget.style.background = 'transparent';
-            }}
-          >
-            {row.icon}
-            <div style={{ flex: 1 }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  fontFamily: 'var(--sans)',
-                  fontWeight: 700,
-                  fontSize: row.valueFontSize || 17,
-                  color: row.valueColor || '#fff',
-                  letterSpacing: '-0.01em',
-                  ...(row.valueStyle || {}),
-                }}
-              >
-                {row.value}
-                {row.extra}
-              </div>
-              <div style={{ fontFamily: 'var(--sans)', fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
-                {row.label}
-              </div>
-            </div>
-            {row.clickable ? <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 16 }} aria-hidden="true">›</span> : null}
-          </div>
-        ))}
-      </div>
+      <SeasonStats results={results} standings={standings} year={statsYear} />
+      <CareerStats results={results} standings={standings} />
+      <StripeDivider />
+      <Biography driver={driver} />
     </div>
   );
 }
-

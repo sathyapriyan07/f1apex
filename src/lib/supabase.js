@@ -145,7 +145,7 @@ export const driver_career = {
     supabase.from('race_results')
       .select(`
         id, position, grid_position, points, status, fastest_lap, fastest_lap_time, laps_completed, time_or_gap, race_id, team_id,
-        races ( id, name, season_year, round, date, circuit_id, circuits ( id, name, locality, country, layout_url ) ),
+        races ( id, name, season_year, round, date, sprint, circuit_id, circuits ( id, name, locality, country, layout_url ) ),
         teams ( id, name, logo_url, team_color )
       `)
       .eq('driver_id', driverId)
