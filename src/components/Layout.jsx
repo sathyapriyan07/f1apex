@@ -47,15 +47,7 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
       {/* Mobile header (pixel layout spec) */}
       <header
         className="mobile-header"
-        style={{
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '9px 16px',
-          background: '#000',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-        }}
+        style={{ display: 'none' }}
       >
         <span
           style={{
@@ -263,7 +255,7 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
         {isFullBleed ? children : <div className="container">{children}</div>}
       </main>
 
-      <MobileMenu tab={tab} setTab={handleSetTab} accentColor="var(--red)" />
+      <MobileMenu tab={tab} setTab={handleSetTab} accentColor="var(--red)" session={session} onSignIn={onSignIn} />
     </div>
   );
 }

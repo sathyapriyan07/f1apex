@@ -1,7 +1,8 @@
 // src/components/ModernMobileMenu.jsx
-import { BarChart2, Car, Flag, Home, Map, Trophy, User } from 'lucide-react';
+import { BarChart2, Car, Flag, Home, LogIn, LogOut, Map, Trophy, User } from 'lucide-react';
+import { signOut } from '../lib/supabase';
 
-export default function MobileMenu({ tab, activeTab, setTab }) {
+export default function MobileMenu({ tab, activeTab, setTab, session, onSignIn }) {
   const currentTab = tab ?? activeTab ?? 'dashboard';
   const navItems = [
     { id: 'dashboard', label: 'HOME', Icon: Home },
@@ -57,6 +58,30 @@ export default function MobileMenu({ tab, activeTab, setTab }) {
           </button>
         );
       })}
+      <button
+        type="button"
+        onClick={() => session ? signOut() : onSignIn?.()}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 4,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          flex: 1,
+          padding: '8px 0',
+        }}
+        aria-label={session ? 'Sign out' : 'Sign in'}
+      >
+        {session
+          ? <LogOut size={20} color="rgba(255,255,255,0.35)" strokeWidth={1.8} aria-hidden="true" />
+          : <LogIn size={20} color="rgba(255,255,255,0.35)" strokeWidth={1.8} aria-hidden="true" />
+        }
+        <span style={{ fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 8, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)' }}>
+          {session ? 'LOGOUT' : 'LOGIN'}
+        </span>
+      </button>
     </nav>
   );
 }
