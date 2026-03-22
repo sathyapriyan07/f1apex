@@ -293,7 +293,7 @@ function AppShell({ onOpenAuth }) {
       case 'races':        return <RacesPage circuits={circuits} seasons={seasons} />;
       case 'results':      return <RaceResultsPage races={races} seasons={seasons} teams={teams} onOpenDriver={openDriver} detailRaceId={detail?.type === 'race' ? detail.id : null} />;
       case 'replay':       return <RaceReplayPage races={races} circuits={circuits} drivers={drivers} />;
-      case 'standings':    return <StandingsHub seasons={seasons} />;
+      case 'standings':    return <StandingsHub seasons={seasons} teams={teams} drivers={drivers} onOpenDriver={openDriver} onOpenTeam={openTeam} />;
       case 'constructors': return <ConstructorStandingsPage seasons={seasons} />;
       case 'laptimes':     return <LapTimesPage races={races} drivers={drivers} />;
       case 'charts':       return <ChartsPage seasons={seasons} />;

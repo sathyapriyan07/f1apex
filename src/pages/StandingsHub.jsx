@@ -1,39 +1,306 @@
 // src/pages/StandingsHub.jsx
-import { useState } from 'react';
-import { DriverStandingsPage, ConstructorStandingsPage } from './Standings';
+import { useEffect, useState } from 'react';
+import { db } from '../lib/supabase';
 
-export default function StandingsHub({ seasons }) {
-  const [mode, setMode] = useState('drivers'); // drivers | constructors
+function P1DriverHero({ entry, teams, onOpen }) {
+  if (!entry) return null;
+  const driver   = entry.drivers;
+  const teamName = entry.teams?.name;
+  const team     = teams.find(t => t.name === teamName);
+  const teamColor = team?.team_color || '#27f4d2';
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14, gap: 8, flexWrap: 'wrap' }}>
-        <button
-          type="button"
-          className="btn btn-ghost btn-sm"
-          onClick={() => setMode('drivers')}
-          style={{
-            borderColor: mode === 'drivers' ? 'rgba(232,0,45,.6)' : 'var(--line)',
-            background: mode === 'drivers' ? 'rgba(232,0,45,.10)' : 'transparent',
-          }}
-        >
-          Drivers
-        </button>
-        <button
-          type="button"
-          className="btn btn-ghost btn-sm"
-          onClick={() => setMode('constructors')}
-          style={{
-            borderColor: mode === 'constructors' ? 'rgba(232,0,45,.6)' : 'var(--line)',
-            background: mode === 'constructors' ? 'rgba(232,0,45,.10)' : 'transparent',
-          }}
-        >
-          Teams
-        </button>
+    <div
+      onClick={() => onOpen?.(driver?.id)}
+      style={{ position: 'relative', width: '100%', height: 320, overflow: 'hidden', background: '#000', cursor: 'pointer' }}
+    >
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 0,
+        background: `radial-gradient(ellipse at 40% 40%, ${teamColor}55 0%, ${teamColor}18 35%, transparent 65%)`,
+      }} />
+      {driver?.image_url && (
+        <img src={driver.image_url} alt=""
+          style={{ position: 'absolute', right: 0, top: 0, height: '100%', width: '65%', objectFit: 'cover', objectPosition: 'top center', zIndex: 1 }}
+          onError={e => e.target.style.display = 'none'}
+        />
+      )}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%', zIndex: 2,
+        background: 'linear-gradient(to top, #000 0%, rgba(0,0,0,0.85) 35%, transparent 100%)',
+      }} />
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 3,
+        display: 'grid', gridTemplateColumns: '56px 1fr auto 28px', alignItems: 'center',
+        padding: '16px 20px 20px',
+      }}>
+        <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 20, color: '#fff', letterSpacing: '-0.01em' }}>01</span>
+        <div>
+          <div style={{ fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 17, color: '#fff', letterSpacing: '-0.01em' }}>
+            {driver?.first_name} {driver?.last_name}
+          </div>
+          <div style={{ fontFamily: 'var(--sans)', fontWeight: 500, fontSize: 13, color: teamColor, marginTop: 2 }}>
+            {teamName || '—'}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right', marginRight: 8 }}>
+          <div style={{ fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 22, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>{entry.points}</div>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>PTS</div>
+        </div>
+        <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 18, fontWeight: 300 }}>›</span>
       </div>
-
-      {mode === 'drivers' ? <DriverStandingsPage seasons={seasons} /> : <ConstructorStandingsPage seasons={seasons} />}
     </div>
   );
 }
 
+function DriverStandingsList({ standings, teams, getTeamColor, onOpenDriver }) {
+  if (!standings.length) return (
+    <div style={{ textAlign: 'center', padding: '48px 20px', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
+      No standings data for this season
+    </div>
+  );
+
+  const p1   = standings[0];
+  const rest = standings.slice(1);
+
+  return (
+    <div>
+      <P1DriverHero entry={p1} teams={teams} onOpen={onOpenDriver} />
+      {rest.map((entry, idx) => {
+        const driver    = entry.drivers;
+        const teamName  = entry.teams?.name;
+        const teamColor = getTeamColor(teamName);
+        const pos       = idx + 2;
+        return (
+          <div key={entry.id}
+            onClick={() => onOpenDriver?.(driver?.id)}
+            style={{
+              display: 'grid', gridTemplateColumns: '56px 1fr auto 28px', alignItems: 'center',
+              padding: '16px 20px', borderTop: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer', transition: 'background 0.1s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 20, color: '#fff', letterSpacing: '-0.01em' }}>
+              {String(pos).padStart(2, '0')}
+            </span>
+            <div>
+              <div style={{ fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 17, color: '#fff', letterSpacing: '-0.01em' }}>
+                {driver?.first_name} {driver?.last_name}
+              </div>
+              <div style={{ fontFamily: 'var(--sans)', fontWeight: 500, fontSize: 13, color: teamColor, marginTop: 2 }}>
+                {teamName || '—'}
+              </div>
+            </div>
+            <div style={{ textAlign: 'right', marginRight: 8 }}>
+              <div style={{ fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 22, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>{entry.points}</div>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>PTS</div>
+            </div>
+            <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 18, fontWeight: 300 }}>›</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function P1TeamHero({ entry, teams, onOpen }) {
+  if (!entry) return null;
+  const team      = teams.find(t => t.name === entry.teams?.name);
+  const teamColor = team?.team_color || '#e8002d';
+
+  return (
+    <div
+      onClick={() => onOpen?.(team?.id)}
+      style={{ position: 'relative', height: 280, overflow: 'hidden', background: '#000', cursor: 'pointer' }}
+    >
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 0,
+        background: `radial-gradient(ellipse at 50% 35%, ${teamColor}50 0%, transparent 60%)`,
+      }} />
+      {team?.logo_url && (
+        <img src={team.logo_url} alt=""
+          style={{
+            position: 'absolute', top: '50%', left: '50%',
+            transform: 'translate(-50%, -58%)', width: '45%', height: '45%',
+            objectFit: 'contain', zIndex: 1,
+          }}
+          onError={e => e.target.style.display = 'none'}
+        />
+      )}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, height: '50%', zIndex: 2,
+        background: 'linear-gradient(to top, #000 0%, rgba(0,0,0,0.85) 35%, transparent 100%)',
+      }} />
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 3,
+        display: 'grid', gridTemplateColumns: '56px 1fr auto 28px', alignItems: 'center',
+        padding: '16px 20px 20px',
+      }}>
+        <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 20, color: '#fff' }}>01</span>
+        <div>
+          <div style={{ fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 17, color: '#fff', letterSpacing: '-0.01em' }}>
+            {entry.teams?.name}
+          </div>
+          <div style={{ fontFamily: 'var(--sans)', fontWeight: 500, fontSize: 13, color: teamColor, marginTop: 2 }}>
+            {team?.nationality || '—'}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right', marginRight: 8 }}>
+          <div style={{ fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 22, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>{entry.points}</div>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>PTS</div>
+        </div>
+        <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 18 }}>›</span>
+      </div>
+    </div>
+  );
+}
+
+function TeamStandingsList({ standings, teams, getTeamColor, onOpenTeam }) {
+  if (!standings.length) return (
+    <div style={{ textAlign: 'center', padding: '48px 20px', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
+      No standings data for this season
+    </div>
+  );
+
+  const p1   = standings[0];
+  const rest = standings.slice(1);
+
+  return (
+    <div>
+      <P1TeamHero entry={p1} teams={teams} onOpen={onOpenTeam} />
+      {rest.map((entry, idx) => {
+        const team      = teams.find(t => t.name === entry.teams?.name);
+        const teamColor = team?.team_color || getTeamColor(entry.teams?.name);
+        const pos       = idx + 2;
+        return (
+          <div key={entry.id}
+            onClick={() => onOpenTeam?.(team?.id)}
+            style={{
+              display: 'grid', gridTemplateColumns: '56px 1fr auto 28px', alignItems: 'center',
+              padding: '14px 20px', borderTop: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer', transition: 'background 0.1s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 20, color: '#fff' }}>
+              {String(pos).padStart(2, '0')}
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {team?.logo_url && (
+                <img src={team.logo_url} alt=""
+                  style={{ width: 26, height: 26, objectFit: 'contain', flexShrink: 0 }}
+                  onError={e => e.target.style.display = 'none'}
+                />
+              )}
+              <div>
+                <div style={{ fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 17, color: '#fff', letterSpacing: '-0.01em' }}>
+                  {entry.teams?.name}
+                </div>
+                <div style={{ fontFamily: 'var(--sans)', fontWeight: 500, fontSize: 13, color: teamColor, marginTop: 2 }}>
+                  {team?.nationality || '—'}
+                </div>
+              </div>
+            </div>
+            <div style={{ textAlign: 'right', marginRight: 8 }}>
+              <div style={{ fontFamily: 'var(--sans)', fontWeight: 800, fontSize: 22, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>{entry.points}</div>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>PTS</div>
+            </div>
+            <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 18 }}>›</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export default function StandingsHub({ seasons, teams = [], drivers = [], onOpenDriver, onOpenTeam }) {
+  const [standingsTab, setStandingsTab]           = useState('drivers');
+  const [selectedYear, setSelectedYear]           = useState(seasons[0]?.year || new Date().getFullYear());
+  const [driverStandings, setDriverStandings]     = useState([]);
+  const [constructorStandings, setConstructorStandings] = useState([]);
+  const [loading, setLoading]                     = useState(false);
+
+  useEffect(() => {
+    if (!selectedYear) return;
+    setLoading(true);
+    Promise.all([
+      db.driver_standings.listBySeason(selectedYear),
+      db.constructor_standings.listBySeason(selectedYear),
+    ]).then(([ds, cs]) => {
+      setDriverStandings(ds.data || []);
+      setConstructorStandings(cs.data || []);
+      setLoading(false);
+    });
+  }, [selectedYear]);
+
+  const getTeamColor = (teamName) => {
+    const t = teams.find(t => t.name?.toLowerCase() === teamName?.toLowerCase());
+    return t?.team_color || 'rgba(255,255,255,0.4)';
+  };
+
+  return (
+    <div style={{ background: '#000', minHeight: '100vh', paddingBottom: 100 }}>
+
+      {/* Title */}
+      <div style={{ padding: '16px 20px 12px', textAlign: 'center' }}>
+        <h1 style={{ fontFamily: 'var(--sans)', fontWeight: 500, fontSize: 18, color: '#fff', letterSpacing: '-0.01em', margin: 0 }}>
+          Standings
+        </h1>
+      </div>
+
+      {/* Season year pills */}
+      <div style={{ display: 'flex', gap: 8, padding: '0 20px 12px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+        {seasons.slice(0, 6).map(s => (
+          <button key={s.id} onClick={() => setSelectedYear(s.year)} style={{
+            padding: '5px 14px', borderRadius: 980, flexShrink: 0,
+            background: selectedYear === s.year ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)',
+            border: 'none', cursor: 'pointer',
+            fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 12,
+            color: selectedYear === s.year ? '#fff' : 'rgba(255,255,255,0.35)',
+            transition: 'all 0.15s',
+          }}>
+            {s.year}
+          </button>
+        ))}
+      </div>
+
+      {/* Drivers / Teams pill toggle */}
+      <div style={{ display: 'flex', margin: '0 20px 20px', background: '#1a1a1a', borderRadius: 980, padding: 4 }}>
+        {[{ id: 'drivers', label: 'Drivers' }, { id: 'teams', label: 'Teams' }].map(({ id, label }) => {
+          const isActive = standingsTab === id;
+          return (
+            <button key={id} onClick={() => setStandingsTab(id)} style={{
+              flex: 1, padding: '11px 0', borderRadius: 980, border: 'none', cursor: 'pointer',
+              fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 15, letterSpacing: '-0.01em',
+              background: isActive ? '#ffffff' : 'transparent',
+              color: isActive ? '#000000' : 'rgba(255,255,255,0.4)',
+              transition: 'all 0.2s cubic-bezier(0.34,1.56,0.64,1)',
+            }}>
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
+          <span className="spinner spinner-lg" />
+        </div>
+      ) : standingsTab === 'drivers' ? (
+        <DriverStandingsList
+          standings={driverStandings}
+          teams={teams}
+          getTeamColor={getTeamColor}
+          onOpenDriver={onOpenDriver}
+        />
+      ) : (
+        <TeamStandingsList
+          standings={constructorStandings}
+          teams={teams}
+          getTeamColor={getTeamColor}
+          onOpenTeam={onOpenTeam}
+        />
+      )}
+    </div>
+  );
+}
