@@ -20,11 +20,6 @@ export default function TeamsPage({ detailId, onOpenTeam, onCloseDetail, onOpenD
           teamId={detailId}
           mode="page"
           onClose={onCloseDetail}
-          onEdit={isAdmin ? () => {
-            const team = C.allRows.find(t => String(t.id) === String(detailId));
-            if (team) C.openEdit(team);
-          } : undefined}
-          onDelete={isAdmin ? async (id) => { await C.remove(id); onCloseDetail?.(); } : undefined}
           onOpenDriver={onOpenDriver}
           onOpenRace={onOpenRace}
         />

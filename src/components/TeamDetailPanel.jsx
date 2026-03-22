@@ -17,7 +17,7 @@ function Divider() {
   return <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', marginBottom: 20 }} />;
 }
 
-function TeamHero({ team, teamColor, onClose, onEdit, onDelete }) {
+function TeamHero({ team, teamColor, onClose }) {
   return (
     <div style={{ background: '#000', position: 'relative' }}>
       <button onClick={onClose} style={{
@@ -25,24 +25,6 @@ function TeamHero({ team, teamColor, onClose, onEdit, onDelete }) {
         background: 'none', border: 'none', cursor: 'pointer',
         color: '#fff', fontSize: 22, padding: '4px 8px',
       }}>←</button>
-      {(onEdit || onDelete) && (
-        <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 10, display: 'flex', gap: 6 }}>
-          {onEdit && (
-            <button onClick={onEdit} type="button" style={{
-              fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 12,
-              color: '#fff', background: 'rgba(255,255,255,0.12)',
-              border: 'none', borderRadius: 8, padding: '6px 12px', cursor: 'pointer',
-            }}>Edit</button>
-          )}
-          {onDelete && (
-            <button onClick={onDelete} type="button" style={{
-              fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 12,
-              color: '#fff', background: 'rgba(232,0,45,0.25)',
-              border: 'none', borderRadius: 8, padding: '6px 12px', cursor: 'pointer',
-            }}>Delete</button>
-          )}
-        </div>
-      )}
 
       {/* Logo */}
       <div style={{
@@ -594,14 +576,7 @@ export default function TeamDetailPanel({ teamId, onClose, onEdit, onOpenDriver,
 
   return (
     <div style={{ background: '#000', minHeight: '100vh', paddingBottom: 100 }}>
-      <TeamHero team={team} teamColor={teamColor} onClose={onClose}
-        onEdit={onEdit}
-        onDelete={onDelete ? async () => {
-          if (!confirm(`Delete ${team.name}?`)) return;
-          await onDelete(team.id);
-          onClose?.();
-        } : undefined}
-      />
+      <TeamHero team={team} teamColor={teamColor} onClose={onClose} />
       <TeamCareerStats results={results} teamColor={teamColor} />
       <TeamRaceHistory results={results} teamColor={teamColor} onOpenRace={onOpenRace} />
       <TeamStandingsSection standings={standings} teamColor={teamColor} />
