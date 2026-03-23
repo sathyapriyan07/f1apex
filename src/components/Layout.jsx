@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { signOut } from '../lib/supabase';
-import MobileMenu from './ModernMobileMenu';
+import BottomMenu from './BottomMenu';
 import MenuIcon from '@mui/icons-material/Menu';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
@@ -260,7 +260,9 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
         {isFullBleed ? children : <div className="container">{children}</div>}
       </main>
 
-      <MobileMenu tab={tab} setTab={handleSetTab} accentColor="var(--red)" session={session} onSignIn={onSignIn} />
+      <div className="mobile-bottom-menu">
+        <BottomMenu tab={tab} setTab={handleSetTab} isAdmin={isAdmin} session={session} onSignIn={onSignIn} />
+      </div>
     </div>
   );
 }
