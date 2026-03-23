@@ -1750,7 +1750,9 @@ html.theme-light .success-msg {
 .tv-theme .view-toggle__btn.is-active { background: rgba(255,255,255,0.14); }
 
 /* Mobile bottom menu */
-.tv-theme .mobile-bottom-menu { display: none; }
+@media (min-width: 769px) {
+  .tv-theme .mobile-bottom-menu { display: none; }
+}
 
 /* Driver cards */
 .tv-theme .driver-card {
