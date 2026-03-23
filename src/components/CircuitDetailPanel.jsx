@@ -293,8 +293,7 @@ export default function CircuitDetailPanel({ circuitId, onClose, onEdit, onDelet
                 </div>
               </div>
 
-              <div className="detail-tv__tabs" style={{ padding: '0 24px', borderBottom: '1px solid var(--line)', display: 'flex', gap: 0 }}>
-                <Accordion defaultOpen="history" style={{ width: '100%', padding: '0 24px' }}>
+              <Accordion defaultOpen="history" style={{ width: '100%', padding: '0 24px' }}>
                   <AccordionItem value="history">
                     <AccordionTrigger>Race History</AccordionTrigger>
                     <AccordionPanel>
@@ -376,7 +375,7 @@ export default function CircuitDetailPanel({ circuitId, onClose, onEdit, onDelet
                       </div>
                     </AccordionPanel>
                   </AccordionItem>
-                </Accordion>
+              </Accordion>
             </div>
           ) : null}
         </div>
