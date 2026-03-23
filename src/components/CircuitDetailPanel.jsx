@@ -2,20 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { db, circuit_detail } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { DriverPhoto } from './Images';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from './Accordion';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-
-function TabButton({ id, active, onClick, children }) {
-  return (
-    <button
-      type="button"
-      onClick={() => onClick(id)}
-      className={`detail-tv__tab ${active ? 'is-active' : ''}`}
-    >
-      {children}
-    </button>
-  );
-}
 
 function formatLapTime(ms) {
   if (!ms) return '—';
@@ -98,7 +87,6 @@ function DriverAppearancesRow({ record, index }) {
 
 export default function CircuitDetailPanel({ circuitId, onClose, onEdit, onDelete, mode = 'panel' }) {
   const { isAdmin } = useAuth();
-  const [tab, setTab] = useState('history');
   const [circuit, setCircuit] = useState(null);
   const [races, setRaces] = useState([]);
   const [raceWinners, setRaceWinners] = useState([]);
@@ -305,102 +293,90 @@ export default function CircuitDetailPanel({ circuitId, onClose, onEdit, onDelet
                 </div>
               </div>
 
-              <div className="detail-tv__tabs">
-                <TabButton id="history" active={tab === 'history'} onClick={setTab}>
-                  Race History
-                </TabButton>
-                <TabButton id="records" active={tab === 'records'} onClick={setTab}>
-                  Records
-                </TabButton>
-                <TabButton id="info" active={tab === 'info'} onClick={setTab}>
-                  Info
-                </TabButton>
-              </div>
-
-              <div className="detail-tv__body">
-                {tab === 'history' ? (
-                  <div className="detail-tv__rows">
-                    {races.length === 0 ? (
-                      <div className="info-msg">No races found for this circuit.</div>
-                    ) : (
-                      races.map((race) => <RaceHistoryRow key={race.id} race={race} winner={winnerMap.get(race.id)} />)
-                    )}
-                  </div>
-                ) : null}
-
-                {tab === 'records' ? (
-                  <div className="detail-tv__stack">
-                    {fastestLap ? (
-                      <div className="detail-tv__section">
-                        <div className="detail-tv__sectionTitle">Fastest Lap Ever</div>
-                        <div className="detail-tv__row detail-tv__recordRow">
-                          <div className="detail-tv__rowTitle">
-                            {fastestLap.drivers ? `${fastestLap.drivers.first_name} ${fastestLap.drivers.last_name}` : '—'}
-                            <div className="detail-tv__rowSub">Season {fastestLap.races?.season_year ?? '—'}</div>
-                          </div>
-                          <div className="detail-tv__time">{formatLapTime(fastestLap.lap_duration_ms)}</div>
-                        </div>
+              <div className="detail-tv__tabs" style={{ padding: '0 24px', borderBottom: '1px solid var(--line)', display: 'flex', gap: 0 }}>
+                <Accordion defaultOpen="history" style={{ width: '100%', padding: '0 24px' }}>
+                  <AccordionItem value="history">
+                    <AccordionTrigger>Race History</AccordionTrigger>
+                    <AccordionPanel>
+                      <div className="detail-tv__rows">
+                        {races.length === 0 ? (
+                          <div className="info-msg">No races found for this circuit.</div>
+                        ) : (
+                          races.map((race) => <RaceHistoryRow key={race.id} race={race} winner={winnerMap.get(race.id)} />)
+                        )}
                       </div>
-                    ) : null}
+                    </AccordionPanel>
+                  </AccordionItem>
 
-                    <RecordCard title="Most Wins at This Circuit" records={winsCounted} renderItem={(record, i) => (
-                      <DriverWinsRow key={record.driver_id || i} record={record} index={i} />
-                    )} />
-
-                    <RecordCard title="Most Appearances" records={appearancesCounted} renderItem={(record, i) => (
-                      <DriverAppearancesRow key={record.driver_id || i} record={record} index={i} />
-                    )} />
-                  </div>
-                ) : null}
-
-                {tab === 'info' ? (
-                  <div className="detail-tv__stack">
-                    <div className="detail-tv__kv">
-                      {[
-                        ['Full Name', circuit.name || '—'],
-                        ['City', circuit.locality || '—'],
-                        ['Country', circuit.country || '—'],
-                        ['Length', circuit.length_km ? `${circuit.length_km} km` : '—'],
-                        ['Latitude', circuit.lat ?? '—'],
-                        ['Longitude', circuit.lng ?? '—'],
-                      ].map(([k, v], idx) => (
-                        <div key={k} className={`detail-tv__kvRow ${idx % 2 ? 'is-alt' : ''}`}>
-                          <div className="detail-tv__kvKey">{k}</div>
-                          <div className="detail-tv__kvVal">{v}</div>
-                        </div>
-                      ))}
-                      {(circuit.lat && circuit.lng) ? (
-                        <div className="detail-tv__kvRow is-alt">
-                          <div className="detail-tv__kvKey">Maps</div>
-                          <div className="detail-tv__kvVal">
-                            <a className="detail-tv__link" href={`https://www.google.com/maps?q=${circuit.lat},${circuit.lng}`} target="_blank" rel="noreferrer">
-                              Open in Google Maps <OpenInNewIcon sx={{ fontSize: 12, verticalAlign: 'middle' }} />
-                            </a>
+                  <AccordionItem value="records">
+                    <AccordionTrigger>Records</AccordionTrigger>
+                    <AccordionPanel>
+                      <div className="detail-tv__stack">
+                        {fastestLap ? (
+                          <div className="detail-tv__section">
+                            <div className="detail-tv__sectionTitle">Fastest Lap Ever</div>
+                            <div className="detail-tv__row detail-tv__recordRow">
+                              <div className="detail-tv__rowTitle">
+                                {fastestLap.drivers ? `${fastestLap.drivers.first_name} ${fastestLap.drivers.last_name}` : '—'}
+                                <div className="detail-tv__rowSub">Season {fastestLap.races?.season_year ?? '—'}</div>
+                              </div>
+                              <div className="detail-tv__time">{formatLapTime(fastestLap.lap_duration_ms)}</div>
+                            </div>
                           </div>
-                        </div>
-                      ) : null}
-                    </div>
-
-                    {circuit.layout_url ? (
-                      <div className="circuit-tv__layoutWide">
-                        <img
-                          src={circuit.layout_url}
-                          alt={`${circuit.name} layout`}
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
+                        ) : null}
+                        <RecordCard title="Most Wins at This Circuit" records={winsCounted} renderItem={(record, i) => (
+                          <DriverWinsRow key={record.driver_id || i} record={record} index={i} />
+                        )} />
+                        <RecordCard title="Most Appearances" records={appearancesCounted} renderItem={(record, i) => (
+                          <DriverAppearancesRow key={record.driver_id || i} record={record} index={i} />
+                        )} />
                       </div>
-                    ) : null}
+                    </AccordionPanel>
+                  </AccordionItem>
 
-                    {circuit.wiki_url ? (
-                      <a className="detail-tv__pill" href={circuit.wiki_url} target="_blank" rel="noreferrer">
-                        <OpenInNewIcon sx={{ fontSize: 12, verticalAlign: 'middle' }} /> Wikipedia
-                      </a>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
+                  <AccordionItem value="info" style={{ borderBottom: 'none' }}>
+                    <AccordionTrigger>Circuit Info</AccordionTrigger>
+                    <AccordionPanel>
+                      <div className="detail-tv__stack">
+                        <div className="detail-tv__kv">
+                          {[
+                            ['Full Name', circuit.name || '—'],
+                            ['City', circuit.locality || '—'],
+                            ['Country', circuit.country || '—'],
+                            ['Length', circuit.length_km ? `${circuit.length_km} km` : '—'],
+                            ['Latitude', circuit.lat ?? '—'],
+                            ['Longitude', circuit.lng ?? '—'],
+                          ].map(([k, v], idx) => (
+                            <div key={k} className={`detail-tv__kvRow ${idx % 2 ? 'is-alt' : ''}`}>
+                              <div className="detail-tv__kvKey">{k}</div>
+                              <div className="detail-tv__kvVal">{v}</div>
+                            </div>
+                          ))}
+                          {(circuit.lat && circuit.lng) ? (
+                            <div className="detail-tv__kvRow is-alt">
+                              <div className="detail-tv__kvKey">Maps</div>
+                              <div className="detail-tv__kvVal">
+                                <a className="detail-tv__link" href={`https://www.google.com/maps?q=${circuit.lat},${circuit.lng}`} target="_blank" rel="noreferrer">
+                                  Open in Google Maps <OpenInNewIcon sx={{ fontSize: 12, verticalAlign: 'middle' }} />
+                                </a>
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                        {circuit.layout_url ? (
+                          <div className="circuit-tv__layoutWide">
+                            <img src={circuit.layout_url} alt={`${circuit.name} layout`} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                          </div>
+                        ) : null}
+                        {circuit.wiki_url ? (
+                          <a className="detail-tv__pill" href={circuit.wiki_url} target="_blank" rel="noreferrer">
+                            <OpenInNewIcon sx={{ fontSize: 12, verticalAlign: 'middle' }} /> Wikipedia
+                          </a>
+                        ) : null}
+                      </div>
+                    </AccordionPanel>
+                  </AccordionItem>
+                </Accordion>
             </div>
           ) : null}
         </div>

@@ -5,6 +5,7 @@ import {
   LineChart, Line, XAxis, YAxis, ReferenceLine, CartesianGrid,
 } from 'recharts';
 import { db, driver_career } from '../lib/supabase';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from './Accordion';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -222,7 +223,7 @@ function CareerStatsSection({ results, standings }) {
   ];
 
   return (
-    <div style={{ padding: '28px 16px 0' }}>
+    <div>
       <SectionLabel>CAREER STATS</SectionLabel>
       <div style={{
         background: '#1a1a1a', borderRadius: 16, overflow: 'hidden', marginTop: 14,
@@ -283,7 +284,7 @@ function SeasonStatsSection({ results, standings, year, teamColor }) {
   if (stats.length % 2 !== 0) stats.push({ label: '', value: '' });
 
   return (
-    <div style={{ padding: '28px 16px 0' }}>
+    <div>
       <SectionLabel>{year} STATISTICS</SectionLabel>
       <div style={{
         background: '#1a1a1a', borderRadius: 16, overflow: 'hidden',
@@ -443,7 +444,7 @@ function PerformanceCharts({ results, teamColor }) {
 
   return (
     <div style={{ padding: '28px 0 0' }}>
-      <div style={{ padding: '0 16px' }}><SectionLabel>PERFORMANCE CHARTS</SectionLabel></div>
+      <div><SectionLabel>PERFORMANCE CHARTS</SectionLabel></div>
 
       {/* Points per round — custom chart */}
       <PointsPerRoundChart results={results} teamColor={teamColor} />
@@ -491,7 +492,7 @@ function ChampionshipsSection({ standings, teamColor }) {
   const sorted = [...standings].sort((a, b) => b.season_year - a.season_year);
 
   return (
-    <div style={{ padding: '28px 16px 0' }}>
+    <div>
       <SectionLabel>CHAMPIONSHIPS</SectionLabel>
       <div style={{
         background: '#1a1a1a', borderRadius: 16, overflow: 'hidden', marginTop: 14,
@@ -652,7 +653,7 @@ function ResultsSection({ results, teamColor, onOpenRace }) {
   });
 
   return (
-    <div style={{ padding: '28px 16px 0' }}>
+    <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, gap: 10 }}>
         <SectionLabel>RESULTS</SectionLabel>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -801,14 +802,47 @@ export default function DriverDetailPanel({ driverId, onClose, onEdit, onDelete,
           onClose?.();
         } : undefined}
       />
-      <CareerStatsSection results={results} standings={standings} />
-      <SeasonStatsSection
-        results={results} standings={standings}
-        year={statsYear} teamColor={teamColor}
-      />
-      <PerformanceCharts results={results} teamColor={teamColor} />
-      <ChampionshipsSection standings={standings} teamColor={teamColor} />
-      <ResultsSection results={results} teamColor={teamColor} onOpenRace={onOpenRace} />
+
+      <Accordion defaultOpen="results" style={{ padding: '0 16px' }}>
+        <AccordionItem value="results">
+          <AccordionTrigger>Results</AccordionTrigger>
+          <AccordionPanel>
+            <ResultsSection results={results} teamColor={teamColor} onOpenRace={onOpenRace} />
+          </AccordionPanel>
+        </AccordionItem>
+
+        <AccordionItem value="season">
+          <AccordionTrigger>{statsYear} Statistics</AccordionTrigger>
+          <AccordionPanel>
+            <SeasonStatsSection
+              results={results} standings={standings}
+              year={statsYear} teamColor={teamColor}
+            />
+          </AccordionPanel>
+        </AccordionItem>
+
+        <AccordionItem value="charts">
+          <AccordionTrigger>Performance Charts</AccordionTrigger>
+          <AccordionPanel>
+            <PerformanceCharts results={results} teamColor={teamColor} />
+          </AccordionPanel>
+        </AccordionItem>
+
+        <AccordionItem value="championships">
+          <AccordionTrigger>Championships</AccordionTrigger>
+          <AccordionPanel>
+            <ChampionshipsSection standings={standings} teamColor={teamColor} />
+          </AccordionPanel>
+        </AccordionItem>
+
+        <AccordionItem value="career" style={{ borderBottom: 'none' }}>
+          <AccordionTrigger>Career Stats</AccordionTrigger>
+          <AccordionPanel>
+            <CareerStatsSection results={results} standings={standings} />
+          </AccordionPanel>
+        </AccordionItem>
+      </Accordion>
+
       <div style={{ height: 40 }} />
     </div>
   );

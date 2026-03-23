@@ -1,6 +1,7 @@
 // src/pages/ImportPage.jsx
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { upsertMany, db } from '../lib/supabase';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from '../components/Accordion';
 
 const fetchErgast  = async (path) => { const r = await fetch(`https://ergast.com/api/f1${path}.json?limit=100`); if (!r.ok) throw new Error(`Ergast ${r.status}`); return r.json(); };
 const fetchJolpica = async (path) => { const r = await fetch(`https://api.jolpi.ca/ergast/f1${path}.json?limit=100`); if (!r.ok) throw new Error(`Jolpica ${r.status}`); return r.json(); };
@@ -304,52 +305,52 @@ export default function ImportPage({ autoRun = false, autoSource = 'jolpica', au
         </div>
       </div>
 
-      {/* Season selector */}
-      <Panel title="⚙ Target Season">
-        <div className="import-season" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <label style={{ margin: 0 }}>Season Year</label>
-          <input className="import-season__input" type="number" value={season} onChange={e => setSeason(e.target.value)} min="1950" max="2030" />
-        </div>
-      </Panel>
+      <div className="card" style={{ padding: '0 16px', marginBottom: 14 }}>
+        <Accordion defaultOpen="ergast">
+          <AccordionItem value="season">
+            <AccordionTrigger>⚙ Target Season</AccordionTrigger>
+            <AccordionPanel>
+              <div className="import-season" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <label style={{ margin: 0 }}>Season Year</label>
+                <input className="import-season__input" type="number" value={season} onChange={e => setSeason(e.target.value)} min="1950" max="2030" />
+              </div>
+            </AccordionPanel>
+          </AccordionItem>
 
-      {/* Ergast / Jolpica */}
-      <Panel title="📡 Ergast / Jolpica API">
-        <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.6 }}>
-          Non-destructive upsert — existing records are preserved. Import circuits before races.
-        </p>
-        <ImportRow label="Seasons (all)" keyPrefix="seasons" onErgast={() => importSeasons('ergast')} onJolpica={() => importSeasons('jolpica')} />
-        <ImportRow label="Circuits"      keyPrefix="circuits" onErgast={() => importCircuits('ergast')} onJolpica={() => importCircuits('jolpica')} />
-        <ImportRow label="Teams"         keyPrefix="teams"    onErgast={() => importTeams('ergast')} onJolpica={() => importTeams('jolpica')} />
-        <ImportRow label="Drivers"       keyPrefix="drivers"  onErgast={() => importDrivers('ergast')} onJolpica={() => importDrivers('jolpica')} />
-        
-        <ImportRow label="Race Results (all rounds)" keyPrefix="rresults" onErgast={() => importRaceResults('ergast')} onJolpica={() => importRaceResults('jolpica')} />
-        <ImportRow label="Driver Standings"       keyPrefix="dstandings" onErgast={() => importDriverStandings('ergast')} onJolpica={() => importDriverStandings('jolpica')} />
-        <ImportRow label="Constructor Standings"  keyPrefix="cstandings" onErgast={() => importConstructorStandings('ergast')} onJolpica={() => importConstructorStandings('jolpica')} />
-        <ImportRow label="Race Schedule" keyPrefix="races"    onErgast={() => importRaces('ergast')} onJolpica={() => importRaces('jolpica')} />
-      </Panel>
+          <AccordionItem value="ergast">
+            <AccordionTrigger>📡 Ergast / Jolpica API</AccordionTrigger>
+            <AccordionPanel>
+              <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.6 }}>
+                Non-destructive upsert — existing records are preserved. Import circuits before races.
+              </p>
+              <ImportRow label="Seasons (all)" keyPrefix="seasons" onErgast={() => importSeasons('ergast')} onJolpica={() => importSeasons('jolpica')} />
+              <ImportRow label="Circuits"      keyPrefix="circuits" onErgast={() => importCircuits('ergast')} onJolpica={() => importCircuits('jolpica')} />
+              <ImportRow label="Teams"         keyPrefix="teams"    onErgast={() => importTeams('ergast')} onJolpica={() => importTeams('jolpica')} />
+              <ImportRow label="Drivers"       keyPrefix="drivers"  onErgast={() => importDrivers('ergast')} onJolpica={() => importDrivers('jolpica')} />
+              <ImportRow label="Race Results (all rounds)" keyPrefix="rresults" onErgast={() => importRaceResults('ergast')} onJolpica={() => importRaceResults('jolpica')} />
+              <ImportRow label="Driver Standings"       keyPrefix="dstandings" onErgast={() => importDriverStandings('ergast')} onJolpica={() => importDriverStandings('jolpica')} />
+              <ImportRow label="Constructor Standings"  keyPrefix="cstandings" onErgast={() => importConstructorStandings('ergast')} onJolpica={() => importConstructorStandings('jolpica')} />
+              <ImportRow label="Race Schedule" keyPrefix="races"    onErgast={() => importRaces('ergast')} onJolpica={() => importRaces('jolpica')} />
+            </AccordionPanel>
+          </AccordionItem>
 
-      {/* OpenF1 */}
-      <Panel title="🟢 OpenF1 API">
-        <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.6 }}>
-          Real-time and historical telemetry sessions. Import circuits first for best matching.
-        </p>
-        <div className="openf1-row" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <span className="openf1-row__label" style={{ fontSize: 13, color: 'var(--muted)' }}>Race Sessions</span>
-          <button className="btn btn-ghost btn-sm" onClick={importOpenF1Sessions} disabled={anyLoading || loading['openf1_sessions']}>
-            {loading['openf1_sessions'] ? <span className="spinner" /> : null} Import from OpenF1
-          </button>
-          <StatusBadge k="openf1_sessions" />
-        </div>
-      </Panel>
-    </div>
-  );
-}
-
-function Panel({ title, children }) {
-  return (
-    <div className="card" style={{ padding: 16, marginBottom: 14 }}>
-      <h3 style={{ fontFamily: 'var(--sans)', fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 12 }}>{title}</h3>
-      {children}
+          <AccordionItem value="openf1" style={{ borderBottom: 'none' }}>
+            <AccordionTrigger>🟢 OpenF1 API</AccordionTrigger>
+            <AccordionPanel>
+              <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.6 }}>
+                Real-time and historical telemetry sessions. Import circuits first for best matching.
+              </p>
+              <div className="openf1-row" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <span className="openf1-row__label" style={{ fontSize: 13, color: 'var(--muted)' }}>Race Sessions</span>
+                <button className="btn btn-ghost btn-sm" onClick={importOpenF1Sessions} disabled={anyLoading || loading['openf1_sessions']}>
+                  {loading['openf1_sessions'] ? <span className="spinner" /> : null} Import from OpenF1
+                </button>
+                <StatusBadge k="openf1_sessions" />
+              </div>
+            </AccordionPanel>
+          </AccordionItem>
+        </Accordion>
+      </div>
     </div>
   );
 }

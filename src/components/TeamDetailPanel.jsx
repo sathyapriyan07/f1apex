@@ -1,6 +1,7 @@
 // src/components/TeamDetailPanel.jsx
 import { useEffect, useMemo, useState } from 'react';
 import { db, team_detail } from '../lib/supabase';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from './Accordion';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
@@ -153,7 +154,7 @@ function TeamCareerStats({ results, teamColor }) {
   ];
 
   return (
-    <div style={{ padding: '28px 16px 0' }}>
+    <div>
       <SectionLabel>CAREER STATS</SectionLabel>
       <div style={{ background: '#1a1a1a', borderRadius: 16, overflow: 'hidden', marginTop: 14 }}>
         {rows.map((row, i) => (
@@ -199,7 +200,7 @@ function TeamRaceHistory({ results, teamColor, onOpenRace }) {
     : grouped.filter(g => String(g.race?.season_year) === String(filterYear));
 
   return (
-    <div style={{ padding: '28px 16px 0' }}>
+    <div>
       <SectionLabel>RACE HISTORY</SectionLabel>
 
       {/* Year filter pills */}
@@ -294,7 +295,7 @@ function TeamStandingsSection({ standings, teamColor }) {
   const sorted = [...standings].sort((a, b) => b.season_year - a.season_year);
 
   return (
-    <div style={{ padding: '28px 16px 0' }}>
+    <div>
       <SectionLabel>STANDINGS</SectionLabel>
       <div style={{ background: '#1a1a1a', borderRadius: 16, overflow: 'hidden', marginTop: 14 }}>
         {sorted.map((s, i) => {
@@ -342,7 +343,7 @@ function TeamStandingsSection({ standings, teamColor }) {
 
 function TeamDriversSection({ currentDrivers, formerDrivers, teamColor, onOpenDriver }) {
   return (
-    <div style={{ padding: '28px 16px 0' }}>
+    <div>
       <SectionLabel>DRIVERS</SectionLabel>
 
       {currentDrivers.length > 0 && (
@@ -453,7 +454,7 @@ function TeamInfoSection({ team, teamColor }) {
   ];
 
   return (
-    <div style={{ padding: '28px 16px 0' }}>
+    <div>
       <SectionLabel>INFO</SectionLabel>
       <div style={{ background: '#1a1a1a', borderRadius: 16, overflow: 'hidden', marginTop: 14 }}>
         {rows.map((row, i) => (
@@ -580,16 +581,49 @@ export default function TeamDetailPanel({ teamId, onClose, onEdit, onOpenDriver,
   return (
     <div style={{ background: '#000', minHeight: '100vh', paddingBottom: 100 }}>
       <TeamHero team={team} teamColor={teamColor} onClose={onClose} />
-      <TeamCareerStats results={results} teamColor={teamColor} />
-      <TeamRaceHistory results={results} teamColor={teamColor} onOpenRace={onOpenRace} />
-      <TeamStandingsSection standings={standings} teamColor={teamColor} />
-      <TeamDriversSection
-        currentDrivers={currentDrivers}
-        formerDrivers={formerDrivers}
-        teamColor={teamColor}
-        onOpenDriver={onOpenDriver}
-      />
-      <TeamInfoSection team={team} teamColor={teamColor} />
+
+      <Accordion defaultOpen="drivers" style={{ padding: '0 16px' }}>
+        <AccordionItem value="drivers">
+          <AccordionTrigger>Drivers</AccordionTrigger>
+          <AccordionPanel>
+            <TeamDriversSection
+              currentDrivers={currentDrivers}
+              formerDrivers={formerDrivers}
+              teamColor={teamColor}
+              onOpenDriver={onOpenDriver}
+            />
+          </AccordionPanel>
+        </AccordionItem>
+
+        <AccordionItem value="history">
+          <AccordionTrigger>Race History</AccordionTrigger>
+          <AccordionPanel>
+            <TeamRaceHistory results={results} teamColor={teamColor} onOpenRace={onOpenRace} />
+          </AccordionPanel>
+        </AccordionItem>
+
+        <AccordionItem value="standings">
+          <AccordionTrigger>Championship Standings</AccordionTrigger>
+          <AccordionPanel>
+            <TeamStandingsSection standings={standings} teamColor={teamColor} />
+          </AccordionPanel>
+        </AccordionItem>
+
+        <AccordionItem value="stats">
+          <AccordionTrigger>Career Stats</AccordionTrigger>
+          <AccordionPanel>
+            <TeamCareerStats results={results} teamColor={teamColor} />
+          </AccordionPanel>
+        </AccordionItem>
+
+        <AccordionItem value="info" style={{ borderBottom: 'none' }}>
+          <AccordionTrigger>Info</AccordionTrigger>
+          <AccordionPanel>
+            <TeamInfoSection team={team} teamColor={teamColor} />
+          </AccordionPanel>
+        </AccordionItem>
+      </Accordion>
+
       <div style={{ height: 40 }} />
     </div>
   );
