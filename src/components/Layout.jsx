@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { signOut } from '../lib/supabase';
 import BottomMenu from './BottomMenu';
+import { ShiftingDropDown } from './ShiftingDropDown';
 import MenuIcon from '@mui/icons-material/Menu';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
@@ -28,21 +29,25 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const userLinks = [
+  // sidebar links (mobile only)
+  const sidebarLinks = [
     { id: 'dashboard', label: 'Home' },
-    { id: 'races', label: 'Schedule' },
-    { id: 'results', label: 'Results' },
-    { id: 'replay', label: 'Replay' },
+    { id: 'drivers',   label: 'Drivers' },
     { id: 'standings', label: 'Standings' },
-    { id: 'drivers', label: 'Drivers' },
-    { id: 'teams', label: 'Teams' },
-    { id: 'circuits', label: 'Circuits' },
+    { id: 'teams',     label: 'Teams' },
+    { id: 'constructors', label: 'Constructors' },
+    { id: 'races',     label: 'Schedule' },
+    { id: 'results',   label: 'Results' },
+    { id: 'replay',    label: 'Replay' },
+    { id: 'circuits',  label: 'Circuits' },
+    { id: 'seasons',   label: 'Seasons' },
+    { id: 'charts',    label: 'Charts' },
+    { id: 'laptimes',  label: 'Lap Times' },
+    ...(isAdmin ? [
+      { id: 'import', label: 'Import' },
+      { id: 'users',  label: 'Users' },
+    ] : []),
   ];
-  const adminLinks = isAdmin ? [
-    { id: 'import', label: 'Import', isAdmin: true },
-    { id: 'users', label: 'Users', isAdmin: true },
-  ] : [];
-  const navLinks = [...userLinks, ...adminLinks];
 
   const displayName = profile?.display_name || profile?.email || 'Guest';
   const initial = (displayName || '?')[0]?.toUpperCase() || '?';
@@ -165,18 +170,7 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
           </div>
 
           <nav className="nav desktop-nav" aria-label="Primary">
-            {navLinks.map((link) => (
-              <div key={link.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                {link.id === 'import' ? <span className="nav-admin-divider" aria-hidden="true" /> : null}
-                <button
-                  type="button"
-                  onClick={() => handleSetTab(link.id)}
-                  className={`nav-link ${tab === link.id ? 'is-active' : ''}${link.isAdmin ? ' is-admin' : ''}`}
-                >
-                  {link.label}
-                </button>
-              </div>
-            ))}
+            <ShiftingDropDown tab={tab} setTab={handleSetTab} isAdmin={isAdmin} />
           </nav>
         </div>
 
@@ -240,11 +234,11 @@ export default function Layout({ tab, setTab, children, onSignIn, theme = 'dark'
               <button type="button" className="mobile-sidebar__close" onClick={() => setMobileNavOpen(false)} aria-label="Close navigation"><CloseIcon sx={{ fontSize: 18 }} /></button>
             </div>
             <div className="mobile-sidebar__list" role="navigation" aria-label="Tabs">
-              {navLinks.map((link) => (
+              {sidebarLinks.map((link) => (
                 <button
                   key={link.id}
                   type="button"
-                  className={`mobile-sidebar__item ${tab === link.id ? 'is-active' : ''}`}
+                  className={`mobile-sidebar__item ${tab === link.id || (link.id === 'standings' && tab === 'constructors') ? 'is-active' : ''}`}
                   onClick={() => handleSetTab(link.id)}
                 >
                   <span>{link.label}</span>
