@@ -83,6 +83,14 @@ export const db = {
     update: (id, row) => supabase.from('races').update(row).eq('id', id).select('*, circuits(id, name, country)').single(),
     remove: (id)   => supabase.from('races').delete().eq('id', id),
   },
+  // Race Highlights
+  race_highlights: {
+    listByRace: (raceId) =>
+      supabase.from('race_highlights').select('*').eq('race_id', raceId).order('sort_order').order('created_at'),
+    insert: (row) => supabase.from('race_highlights').insert(row).select().single(),
+    update: (id, row) => supabase.from('race_highlights').update(row).eq('id', id).select().single(),
+    remove: (id) => supabase.from('race_highlights').delete().eq('id', id),
+  },
   // Race Results
   race_results: {
     listByRace: (raceId) =>

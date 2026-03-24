@@ -2,8 +2,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { db } from '../lib/supabase';
 import { Loader } from './Drivers';
+import { useAuth } from '../hooks/useAuth';
+
+function getYouTubeId(url) {
+  if (!url) return null;
+  const m = url.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{11})/);
+  return m ? m[1] : null;
+}
 
 export default function RaceResultsPage({ races = [], seasons = [], teams = [], onOpenDriver, detailRaceId }) {
+  const { isAdmin } = useAuth();
   const [selectedRaceId, setSelectedRaceId] = useState(null);
   const [filterYear, setFilterYear] = useState(() => {
     const ys = (seasons || []).map((s) => Number(s.year)).filter(Boolean);
@@ -17,6 +25,11 @@ export default function RaceResultsPage({ races = [], seasons = [], teams = [], 
   const [fastestLapResult, setFastestLapResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [highlights, setHighlights] = useState([]);
+  const [activeHlIdx, setActiveHlIdx] = useState(0);
+  const [addingHl, setAddingHl] = useState(false);
+  const [hlForm, setHlForm] = useState({ title: '', url: '' });
+  const [savingHl, setSavingHl] = useState(false);
 
   useEffect(() => {
     if (!detailRaceId) return;
@@ -35,14 +48,22 @@ export default function RaceResultsPage({ races = [], seasons = [], teams = [], 
   useEffect(() => {
     if (!selectedRaceId) return;
     let alive = true;
+    setAddingHl(false);
+    setHlForm({ title: '', url: '' });
+    setActiveHlIdx(0);
+    setHighlights([]);
     (async () => {
       setLoading(true);
       setError('');
-      const { data, error: e } = await db.race_results.listByRace(selectedRaceId);
+      const [{ data, error: e }, { data: hlData }] = await Promise.all([
+        db.race_results.listByRace(selectedRaceId),
+        db.race_highlights.listByRace(selectedRaceId),
+      ]);
       if (!alive) return;
       if (e) { setError(e.message); setLoading(false); return; }
       const rows = data || [];
       setResults(rows);
+      setHighlights(hlData || []);
       const podium = rows
         .filter((r) => Number(r.position) && Number(r.position) <= 3)
         .sort((a, b) => (a.position || 0) - (b.position || 0));
@@ -229,6 +250,144 @@ export default function RaceResultsPage({ races = [], seasons = [], teams = [], 
       )}
 
       <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '0 0 4px' }} />
+
+      {/* Race Highlights */}
+      {(highlights.length > 0 || isAdmin) && (
+        <div style={{ margin: '16px 16px 0' }}>
+          {highlights.length > 0 && (() => {
+            const active = highlights[Math.min(activeHlIdx, highlights.length - 1)];
+            const ytId = getYouTubeId(active?.url);
+            return (
+              <>
+                {/* Tab strip */}
+                {highlights.length > 1 && (
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 8, overflowX: 'auto', scrollbarWidth: 'none' }}>
+                    {highlights.map((h, i) => (
+                      <button key={h.id} type="button" onClick={() => setActiveHlIdx(i)}
+                        style={{
+                          flexShrink: 0, padding: '5px 12px', borderRadius: 980,
+                          background: i === activeHlIdx ? '#e8002d' : 'rgba(255,255,255,0.08)',
+                          border: 'none', cursor: 'pointer',
+                          fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 11,
+                          color: i === activeHlIdx ? '#fff' : 'rgba(255,255,255,0.45)',
+                        }}
+                      >
+                        {h.title || `Video ${i + 1}`}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {/* Player */}
+                {ytId && (
+                  <div style={{ borderRadius: 12, overflow: 'hidden', aspectRatio: '16/9', background: '#111' }}>
+                    <iframe
+                      key={ytId}
+                      src={`https://www.youtube.com/embed/${ytId}`}
+                      title={active.title || 'Race Highlights'}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+                    />
+                  </div>
+                )}
+                {/* Admin: per-video delete */}
+                {isAdmin && (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+                    <button type="button"
+                      onClick={async () => {
+                        await db.race_highlights.remove(active.id);
+                        setHighlights(prev => {
+                          const next = prev.filter(h => h.id !== active.id);
+                          setActiveHlIdx(i => Math.min(i, Math.max(0, next.length - 1)));
+                          return next;
+                        });
+                      }}
+                      style={{
+                        background: 'rgba(232,0,45,0.12)', border: '1px solid rgba(232,0,45,0.3)',
+                        borderRadius: 8, padding: '5px 12px', color: '#ff453a',
+                        cursor: 'pointer', fontFamily: 'var(--sans)', fontSize: 11,
+                      }}
+                    >Remove this video</button>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+
+          {/* Admin: add new video */}
+          {isAdmin && (
+            <div style={{ marginTop: highlights.length > 0 ? 10 : 0 }}>
+              {addingHl ? (
+                <div style={{ background: '#1a1a1a', borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <input
+                    value={hlForm.title}
+                    onChange={e => setHlForm(p => ({ ...p, title: e.target.value }))}
+                    placeholder="Label (e.g. Race Highlights, Sprint)"
+                    style={{
+                      background: '#111', border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: 8, padding: '8px 12px', color: '#fff',
+                      fontFamily: 'var(--sans)', fontSize: 12,
+                    }}
+                  />
+                  <input
+                    value={hlForm.url}
+                    onChange={e => setHlForm(p => ({ ...p, url: e.target.value }))}
+                    placeholder="https://www.youtube.com/watch?v=…"
+                    style={{
+                      background: '#111', border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: 8, padding: '8px 12px', color: '#fff',
+                      fontFamily: 'var(--mono)', fontSize: 12,
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button type="button" disabled={savingHl || !hlForm.url}
+                      onClick={async () => {
+                        if (!hlForm.url) return;
+                        setSavingHl(true);
+                        const { data } = await db.race_highlights.insert({
+                          race_id: selectedRaceId,
+                          title: hlForm.title,
+                          url: hlForm.url,
+                          sort_order: highlights.length,
+                        });
+                        if (data) {
+                          setHighlights(prev => [...prev, data]);
+                          setActiveHlIdx(highlights.length);
+                        }
+                        setHlForm({ title: '', url: '' });
+                        setAddingHl(false);
+                        setSavingHl(false);
+                      }}
+                      style={{
+                        background: '#e8002d', border: 'none', borderRadius: 8,
+                        padding: '8px 16px', color: '#fff', cursor: 'pointer',
+                        fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 12,
+                      }}
+                    >{savingHl ? '…' : 'Add'}</button>
+                    <button type="button" onClick={() => { setAddingHl(false); setHlForm({ title: '', url: '' }); }}
+                      style={{
+                        background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 8,
+                        padding: '8px 14px', color: '#fff', cursor: 'pointer',
+                        fontFamily: 'var(--sans)', fontSize: 12,
+                      }}
+                    >Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <button type="button" onClick={() => setAddingHl(true)}
+                  style={{
+                    background: 'rgba(255,255,255,0.06)', border: '1px dashed rgba(255,255,255,0.15)',
+                    borderRadius: 8, padding: '8px 14px', color: 'rgba(255,255,255,0.5)',
+                    cursor: 'pointer', fontFamily: 'var(--sans)', fontSize: 12, width: '100%',
+                  }}
+                >+ Add Highlight Video</button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '16px 0 4px' }} />
 
       {error && <div style={{ margin: '14px 20px', color: '#ff453a', fontFamily: 'var(--sans)', fontSize: 13 }}>{error}</div>}
       {loading ? <Loader /> : results.map((result) => {
