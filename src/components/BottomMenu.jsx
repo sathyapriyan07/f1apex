@@ -33,8 +33,7 @@ const STANDINGS_SUB = [
 ];
 
 const ADMIN_SUB = [
-  { label: 'Import', name: 'import', Icon: BarChart2 },
-  { label: 'Users',  name: 'users',  Icon: User },
+  { label: 'Users', name: 'users', Icon: User },
 ];
 
 export default function BottomMenu({ tab, setTab, isAdmin, session, onSignIn }) {
@@ -220,7 +219,7 @@ export default function BottomMenu({ tab, setTab, isAdmin, session, onSignIn }) 
             key="import"
             type="button"
             style={btnStyle(tab === 'import')}
-            onClick={() => handleNavClick('import')}
+            onClick={() => { setView('default'); setTab('import'); }}
             aria-label="import"
             aria-current={tab === 'import' ? 'page' : undefined}
           >
@@ -236,11 +235,11 @@ export default function BottomMenu({ tab, setTab, isAdmin, session, onSignIn }) 
         {isAdmin && (
           <button
             type="button"
-            style={btnStyle(view === 'more' || tab === 'import' || tab === 'users')}
+            style={btnStyle(view === 'more' || tab === 'users')}
             onClick={() => handleNavClick('more')}
             aria-label="Admin"
           >
-            {(tab === 'import' || tab === 'users') && <span style={dotStyle} />}
+            {tab === 'users' && <span style={dotStyle} />}
             <Shield size={19} />
           </button>
         )}
