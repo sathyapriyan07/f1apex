@@ -1,6 +1,6 @@
 // src/components/BottomMenu.jsx
 import { useState, useEffect, useRef } from 'react';
-import { Home, User, Car, Flag, BarChart2, Trophy, Map, LogIn, LogOut, Shield } from 'lucide-react';
+import { Home, User, Car, Flag, BarChart2, Trophy, Map, LogIn, LogOut, Shield, Upload } from 'lucide-react';
 import { signOut } from '../lib/supabase';
 
 function useMeasure() {
@@ -213,6 +213,21 @@ export default function BottomMenu({ tab, setTab, isAdmin, session, onSignIn }) 
             </button>
           );
         })}
+
+        {/* Admin Import shortcut */}
+        {isAdmin && (
+          <button
+            key="import"
+            type="button"
+            style={btnStyle(tab === 'import')}
+            onClick={() => handleNavClick('import')}
+            aria-label="import"
+            aria-current={tab === 'import' ? 'page' : undefined}
+          >
+            {tab === 'import' && <span style={dotStyle} />}
+            <Upload size={19} />
+          </button>
+        )}
 
         {/* Divider */}
         <div style={{ width: 1, height: 22, background: 'rgba(255,255,255,0.10)', margin: '0 2px', flexShrink: 0 }} />
