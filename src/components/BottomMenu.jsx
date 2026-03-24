@@ -1,6 +1,6 @@
 // src/components/BottomMenu.jsx
 import { useState, useEffect, useRef } from 'react';
-import { Home, User, Car, Flag, BarChart2, Trophy, Map, LogIn, LogOut, Shield, Upload } from 'lucide-react';
+import { Home, User, Car, Flag, BarChart2, Trophy, Map, LogIn, LogOut, Upload } from 'lucide-react';
 import { signOut } from '../lib/supabase';
 
 function useMeasure() {
@@ -33,7 +33,8 @@ const STANDINGS_SUB = [
 ];
 
 const ADMIN_SUB = [
-  { label: 'Users', name: 'users', Icon: User },
+  { label: 'Import', name: 'import', Icon: Upload },
+  { label: 'Users',  name: 'users',  Icon: User },
 ];
 
 export default function BottomMenu({ tab, setTab, isAdmin, session, onSignIn }) {
@@ -218,31 +219,17 @@ export default function BottomMenu({ tab, setTab, isAdmin, session, onSignIn }) 
           <button
             key="import"
             type="button"
-            style={btnStyle(tab === 'import')}
-            onClick={() => { setView('default'); setTab('import'); }}
-            aria-label="import"
-            aria-current={tab === 'import' ? 'page' : undefined}
+            style={btnStyle(tab === 'import' || tab === 'users')}
+            onClick={() => { setView(view === 'more' ? 'default' : 'more'); }}
+            aria-label="Admin"
           >
-            {tab === 'import' && <span style={dotStyle} />}
+            {(tab === 'import' || tab === 'users') && <span style={dotStyle} />}
             <Upload size={19} />
           </button>
         )}
 
         {/* Divider */}
         <div style={{ width: 1, height: 22, background: 'rgba(255,255,255,0.10)', margin: '0 2px', flexShrink: 0 }} />
-
-        {/* Admin more button */}
-        {isAdmin && (
-          <button
-            type="button"
-            style={btnStyle(view === 'more' || tab === 'users')}
-            onClick={() => handleNavClick('more')}
-            aria-label="Admin"
-          >
-            {tab === 'users' && <span style={dotStyle} />}
-            <Shield size={19} />
-          </button>
-        )}
 
         {/* Auth button */}
         <button

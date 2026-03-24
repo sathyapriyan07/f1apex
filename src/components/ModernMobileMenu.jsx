@@ -8,9 +8,10 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import MapIcon from '@mui/icons-material/Map';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
+import UploadIcon from '@mui/icons-material/Upload';
 import { signOut } from '../lib/supabase';
 
-export default function MobileMenu({ tab, activeTab, setTab, session, onSignIn }) {
+export default function MobileMenu({ tab, activeTab, setTab, session, onSignIn, isAdmin }) {
   const currentTab = tab ?? activeTab ?? 'dashboard';
   const navItems = [
     { id: 'dashboard', label: 'HOME', Icon: HomeIcon },
@@ -20,6 +21,7 @@ export default function MobileMenu({ tab, activeTab, setTab, session, onSignIn }
     { id: 'results', label: 'RESULTS', Icon: BarChartIcon },
     { id: 'standings', label: 'STANDINGS', Icon: EmojiEventsIcon },
     { id: 'circuits', label: 'CIRCUITS', Icon: MapIcon },
+    ...(isAdmin ? [{ id: 'import', label: 'IMPORT', Icon: UploadIcon }] : []),
   ];
 
   const iconStyle = (isActive) => ({
